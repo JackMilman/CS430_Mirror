@@ -34,6 +34,10 @@ ser = Ast::Serializer.new
 # BitwiseTests::Test.new.run_tests_eval(eval, ser, Ast::Runtime.new)
 # puts
 
+# puts "------LOGICAL SERIALIZATION TESTS------"
+# LogicalTests::Test.new.run_tests_serial(ser, Ast::Runtime.new)
+# puts
+
 # puts "------CELL SERIALIZATION TESTS------"
 # CellTests::Test.new.run_tests_serial(ser, Ast::Runtime.new)
 # puts

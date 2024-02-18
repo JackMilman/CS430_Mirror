@@ -122,7 +122,7 @@ module BitwiseTests
                 Ast::IntP.new(-5),
                 Ast::IntP.new(2),
             )
-            super_var = Ast::BitwiseXor.new( # hee hee hee
+            super_var = Ast::BitwiseXor.new(
                 Ast::Add.new(
                     Ast::IntP.new(5),
                     Ast::IntP.new(5), 
@@ -146,7 +146,7 @@ module BitwiseTests
             var1 = Ast::BitwiseNot.new(Ast::IntP.new(1))
             var2 = Ast::BitwiseNot.new(Ast::IntP.new(9))
             var3 = Ast::BitwiseNot.new(Ast::IntP.new(-5))
-            super_var = Ast::BitwiseNot.new( # hee hee hee
+            super_var = Ast::BitwiseNot.new(
                 Ast::BitwiseNot.new(Ast::IntP.new(3))
             )
             result1 = var1.traverse(visitor, runtime)
@@ -172,7 +172,7 @@ module BitwiseTests
                 Ast::IntP.new(-5),
                 Ast::IntP.new(2),
             )
-            super_var = Ast::BitwiseLeftShift.new( # hee hee hee
+            super_var = Ast::BitwiseLeftShift.new(
                 Ast::Add.new(
                     Ast::IntP.new(5),
                     Ast::IntP.new(5), 
@@ -205,7 +205,7 @@ module BitwiseTests
                 Ast::IntP.new(-5),
                 Ast::IntP.new(2),
             )
-            super_var = Ast::BitwiseRightShift.new( # hee hee hee
+            super_var = Ast::BitwiseRightShift.new(
                 Ast::Add.new(
                     Ast::IntP.new(5),
                     Ast::IntP.new(5), 
@@ -240,7 +240,7 @@ module BitwiseTests
                 Ast::IntP.new(-5),
                 Ast::IntP.new(2),
             )
-            super_b_and = Ast::BitwiseAnd.new( # hee hee hee
+            super_b_and = Ast::BitwiseAnd.new(
                 Ast::Add.new(
                     Ast::IntP.new(5),
                     Ast::IntP.new(5), 
@@ -284,7 +284,7 @@ module BitwiseTests
                 Ast::IntP.new(-5),
                 Ast::IntP.new(2),
             )
-            super_var = Ast::BitwiseOr.new( # hee hee hee
+            super_var = Ast::BitwiseOr.new(
                 Ast::Add.new(
                     Ast::IntP.new(5),
                     Ast::IntP.new(5), 
@@ -327,7 +327,7 @@ module BitwiseTests
                 Ast::IntP.new(-5),
                 Ast::IntP.new(2),
             )
-            super_var = Ast::BitwiseXor.new( # hee hee hee
+            super_var = Ast::BitwiseXor.new(
                 Ast::Add.new(
                     Ast::IntP.new(5),
                     Ast::IntP.new(5), 
@@ -361,7 +361,7 @@ module BitwiseTests
             var1 = Ast::BitwiseNot.new(Ast::IntP.new(1))
             var2 = Ast::BitwiseNot.new(Ast::IntP.new(9))
             var3 = Ast::BitwiseNot.new(Ast::IntP.new(-5))
-            super_var = Ast::BitwiseNot.new( # hee hee hee
+            super_var = Ast::BitwiseNot.new(
                 Ast::BitwiseNot.new(Ast::IntP.new(3))
             )
             bad_var = Ast::BitwiseNot.new(Ast::FloatP.new(2.5))
@@ -394,7 +394,7 @@ module BitwiseTests
                 Ast::IntP.new(-5),
                 Ast::IntP.new(2),
             )
-            super_var = Ast::BitwiseLeftShift.new( # hee hee hee
+            super_var = Ast::BitwiseLeftShift.new(
                 Ast::Add.new(
                     Ast::IntP.new(5),
                     Ast::IntP.new(5), 
@@ -437,7 +437,7 @@ module BitwiseTests
                 Ast::IntP.new(-5),
                 Ast::IntP.new(2),
             )
-            super_var = Ast::BitwiseRightShift.new( # hee hee hee
+            super_var = Ast::BitwiseRightShift.new(
                 Ast::Add.new(
                     Ast::IntP.new(5),
                     Ast::IntP.new(5), 

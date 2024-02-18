@@ -51,7 +51,6 @@ def set_up_grid(runtime)
     cell_5_2 = Ast::CellAddressP.new(5, 2)
     cell_5_3 = Ast::CellAddressP.new(5, 3)
     cell_5_4 = Ast::CellAddressP.new(5, 4)
-    cell_5_5 = Ast::CellAddressP.new(5, 5)
 
     zero = Ast::IntP.new(0)
     one = Ast::IntP.new(1)
@@ -69,7 +68,17 @@ def set_up_grid(runtime)
     runtime.set_cell(cell_1_0, one)
     runtime.set_cell(cell_1_1, one)
     runtime.set_cell(cell_1_2, neg_two)
-    runtime.set_cell(cell_1_3, one)
+    runtime.set_cell(cell_1_3, Ast::Add.new(
+        Ast::CellRValue.new(
+            Ast::IntP.new(0),
+            Ast::IntP.new(1)
+        ),
+        Ast::CellRValue.new(
+            Ast::IntP.new(1),
+            Ast::IntP.new(2)
+        ),
+    ))
+    #[0,1] + #[1,2]
     runtime.set_cell(cell_1_4, one)
     runtime.set_cell(cell_1_5, one)
 
@@ -99,16 +108,14 @@ def set_up_grid(runtime)
     runtime.set_cell(cell_5_2, zero)
     runtime.set_cell(cell_5_3, Ast::CellAddressP.new(2,3))
     runtime.set_cell(cell_5_4, zero)
-    runtime.set_cell(cell_5_5, zero)
 
-    # runtime.dump_state
     # expected structure:
-    # 0:|  0  |  12  |  -1  |    0   |   0  |   0  |
-    # 1:|  1  |   1  |  -2  |    1   |   1  |   1  |
-    # 2:|  0  |   2  |   0  |   -2   |  -2  |  -2  |
-    # 3:|  0  |   0  |   0  |    0   |   0  |   0  |
-    # 4:|  0  |   0  |   0  |    0   |   0  |   0  |
-    # 5:|  0  |   0  |   0  | [2, 3] |   0  |   0  |
+    # 0:|  0  |  12  |  -1  |       0       |   0  |    0   |
+    # 1:|  1  |   1  |  -2  |#[0,1] + #[1,2]|   1  |    1   |
+    # 2:|  0  |   2  |   0  |      -2       |  -2  |   -2   |
+    # 3:|  0  |   0  |   0  |       0       |   0  |    0   |
+    # 4:|  0  |   0  |   0  |       0       |   0  |    0   |
+    # 5:|  0  |   0  |   0  |    [2, 3]     |   0  |   nil  |
 end
 set_up_grid(runtime)
 
@@ -122,8 +129,9 @@ arith = Ast::Modulo.new(
     ),
     Ast::IntP.new(12)
 )
+puts
 puts "Arith operation: #{arith.traverse(ser, runtime)}"
-puts "Arith operation evaluated: #{arith.traverse(eval, runtime).traverse(ser, runtime)}"
+puts "Arith operation expected: 7, evaluated: #{arith.traverse(eval, runtime).traverse(ser, runtime)}"
 
 rval_shift = Ast::BitwiseLeftShift.new(
     Ast::CellRValue.new(
@@ -135,8 +143,9 @@ rval_shift = Ast::BitwiseLeftShift.new(
     ),
     Ast::IntP.new(3)
 )
+puts
 puts "Rval Left Shift: #{rval_shift.traverse(ser, runtime)}"
-puts "Rval Left Shift evaluated: #{rval_shift.traverse(eval, runtime).traverse(ser, runtime)}"
+puts "Rval Left Shift expected: -16, evaluated: #{rval_shift.traverse(eval, runtime).traverse(ser, runtime)}"
 
 rval_comp = Ast::LessThan.new(
     Ast::CellRValue.new(
@@ -148,8 +157,9 @@ rval_comp = Ast::LessThan.new(
         Ast::IntP.new(1)
     )
 )
+puts
 puts "Rval_comp: #{rval_comp.traverse(ser, runtime)}"
-puts "Rval_comp evaluated: #{rval_comp.traverse(eval, runtime).traverse(ser, runtime)}"
+puts "Rval_comp expected: true, evaluated: #{rval_comp.traverse(eval, runtime).traverse(ser, runtime)}"
 
 logic_comp = Ast::Not.new(
     Ast::GreaterThan.new(
@@ -157,8 +167,9 @@ logic_comp = Ast::Not.new(
         Ast::FloatP.new(3.2)
     )
 )
+puts
 puts "Logic_comp: #{logic_comp.traverse(ser, runtime)}}"
-puts "Logic_comp evaluated: #{logic_comp.traverse(eval, runtime).traverse(ser, runtime)}"
+puts "Logic_comp expected: false, evaluated: #{logic_comp.traverse(eval, runtime).traverse(ser, runtime)}"
 
 sum = Ast::Sum.new(
     Ast::CellLValue.new(
@@ -170,8 +181,9 @@ sum = Ast::Sum.new(
         Ast::IntP.new(3)
     )
 )
+puts
 puts "Sum Rval: #{sum.traverse(ser, runtime)}"
-puts "Sum Rval evaluated: #{sum.traverse(eval, runtime).traverse(ser, runtime)}"
+puts "Sum Rval expected: 8, evaluated: #{sum.traverse(eval, runtime).traverse(ser, runtime)}"
 
 cast = Ast::Divide.new(
     Ast::CastIntToFloat.new(
@@ -179,8 +191,9 @@ cast = Ast::Divide.new(
     ),
     Ast::IntP.new(2)
 )
+puts
 puts "Cast Divide: #{cast.traverse(ser, runtime)}"
-puts "Cast Divide evaluated: #{cast.traverse(eval, runtime).traverse(ser, runtime)}"
+puts "Cast Divide expected: 3.5, evaluated: #{cast.traverse(eval, runtime).traverse(ser, runtime)}"
 
 error1 = Ast::Exponent.new(
     Ast::StringP.new("^_^"),
@@ -189,6 +202,7 @@ error1 = Ast::Exponent.new(
         Ast::FloatP.new(-7000.5)
     )
 )
+puts
 puts "String arithmetic error: #{error1.traverse(ser, runtime)}"
 begin
     puts "String arithmetic evaluated: #{error1.traverse(eval, runtime).traverse(ser, runtime)}"
@@ -200,6 +214,7 @@ error2 = Ast::Add.new(
     Ast::IntP.new(false),
     Ast::IntP.new(5)
 )
+puts
 puts "Incompatible value error: #{error2.traverse(ser, runtime)}"
 begin
     puts "Bad Int evaluated: #{error2.traverse(eval, runtime).traverse(ser, runtime)}"
@@ -208,9 +223,19 @@ rescue TypeError
 end
 
 error3 = Ast::CellAddressP.new(4, 65)
+puts
 puts "Index error for grid of size #{size}: #{error3.traverse(ser, runtime)}"
 begin
     puts "Accessed out of bounds: #{runtime.get_cell(error3)}"
 rescue IndexError
     puts "Caught the Index Error"
+end
+
+error4 = Ast::CellAddressP.new(5, 5)
+puts
+puts "Accessing an undefined cell error: #{error4.traverse(ser, runtime)}"
+begin
+    puts "Accessed undefined cell: #{runtime.get_cell(error4)}"
+rescue TypeError
+    puts "Caught the undefined cell access Error"
 end

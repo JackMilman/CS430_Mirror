@@ -939,6 +939,9 @@ module Ast
         def get_cell(address)
             validate_range(address)
             cell_val = @cell_grid[address.row][address.column]
+            if cell_val.most_recent_p == nil
+                raise TypeError, "Undefined cell"
+            end
             return cell_val.most_recent_p
         end
 
