@@ -9,7 +9,7 @@ require_relative './cell_tests.rb'
 eval = Ast::Evaluator.new
 ser = Ast::Serializer.new
 size = 6
-runtime = Ast::Runtime.new(size)
+runtime = Ast::Runtime.new(size) # n * n
 def set_up_grid(runtime)
     cell_0_0 = Ast::CellAddressP.new(0, 0)
     cell_0_1 = Ast::CellAddressP.new(0, 1)
@@ -183,7 +183,7 @@ sum = Ast::Sum.new(
 )
 puts
 puts "Sum Rval: #{sum.traverse(ser, runtime)}"
-puts "Sum Rval expected: 8, evaluated: #{sum.traverse(eval, runtime).traverse(ser, runtime)}"
+puts "Sum Rval expected: 6, evaluated: #{sum.traverse(eval, runtime).traverse(ser, runtime)}"
 
 cast = Ast::Divide.new(
     Ast::CastIntToFloat.new(
