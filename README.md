@@ -1,4 +1,6 @@
-GridKid: The CS430 Semester-long project. Currently on Milestone [{1}], finishing up Serialization and Evaluation
+GridKid: The CS430 Semester-long project. Currently on Milestone [{1}]
+  - Finished creating the classes for Serialization, Evaluation, and Runtime.
+  - Now working on testing for the entire program and readying to submit.
 
 lab2_scoping: A lab exploring the effects of scoping in ruby programs.
 
