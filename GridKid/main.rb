@@ -8,29 +8,35 @@ require_relative './cell_tests.rb'
 
 eval = Ast::Evaluator.new
 ser = Ast::Serializer.new
-runtime = Ast::Runtime.new
 
 # puts
 # puts "------PRIMITIVE SERIALIZATION TESTS------"
-# PrimitiveTests::Test.new.run_tests_serial(ser, runtime)
+# PrimitiveTests::Test.new.run_tests_serial(ser, Ast::Runtime.new)
 # puts
+
 # puts "------PRIMITIVE EVALUATION TESTS------"
-# PrimitiveTests::Test.new.run_tests_eval(eval, ser, runtime)
+# PrimitiveTests::Test.new.run_tests_eval(eval, ser, Ast::Runtime.new)
 # puts
+
 # puts "------ARITHMETIC SERIALIZATION TESTS------"
-# ArithTests::Test.new.run_tests_serial(ser, runtime)
+# ArithTests::Test.new.run_tests_serial(ser, Ast::Runtime.new)
 # puts
+
 # puts "------ARITHMETIC EVALUATION TESTS------"
-# ArithTests::Test.new.run_tests_eval(eval, ser, runtime)
+# ArithTests::Test.new.run_tests_eval(eval, ser, Ast::Runtime.new)
 # puts
+
 # puts "------BITWISE SERIALIZATION TESTS------"
-# BitwiseTests::Test.new.run_tests_serial(ser, runtime)
+# BitwiseTests::Test.new.run_tests_serial(ser, Ast::Runtime.new)
 # puts
+
 # puts "------BITWISE EVALUATION TESTS------"
-# BitwiseTests::Test.new.run_tests_eval(eval, ser, runtime)
+# BitwiseTests::Test.new.run_tests_eval(eval, ser, Ast::Runtime.new)
 # puts
-# puts "------CELL SERIAL TESTS------"
-# CellTests::Test.new.run_tests_serial(ser, runtime)
-puts
-puts "------CELL EVALUATION TESTS------"
-CellTests::Test.new.run_tests_eval(eval, ser, runtime)
+
+# puts "------CELL SERIALIZATION TESTS------"
+# CellTests::Test.new.run_tests_serial(ser, Ast::Runtime.new)
+# puts
+
+# puts "------CELL EVALUATION TESTS------"
+# CellTests::Test.new.run_tests_eval(eval, ser, Ast::Runtime.new(3))
