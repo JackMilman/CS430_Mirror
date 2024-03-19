@@ -5,7 +5,6 @@ module Ast
     class Number
     end
 
-    # Apt superclass.
     class NumberP < Number
         attr_reader :value
 
@@ -135,10 +134,7 @@ module Ast
     end
 
     # Used as a wrapper for type checking.
-    # It feels strange to make an empty superclass just for the typechecking.
-    # I'm trying to sort through my feelings about it. I see why you're doing
-    # it. I wonder if making an Expression superclass with a type tag would
-    # feel cleaner.
+
     class Boolean
     end
 
@@ -315,20 +311,19 @@ module Ast
     #-------------------------------------------------------------------------#
     class Serializer
         def visit_integer(node, payload)
-            # node.value.to_s works too.
-            return "#{node.value}"
+            return node.value.to_s
         end
         
         def visit_float(node, payload)
-            return "#{node.value}"
+            return node.value.to_s
         end
         
         def visit_boolean(node, payload)
-            return "#{node.value}"
+            return node.value.to_s
         end
         
         def visit_string(node, payload)
-            return "#{node.value}"
+            return node.value.to_s
         end
         
         def visit_cell_address(node, payload)
@@ -337,8 +332,6 @@ module Ast
 
         # Helper method for binary operations
         def visit_binary(node, operation, payload)
-            # These variables don't gain you much. Sometimes when the code feels
-            # like, I prefer format strings over interpolated strings.
             left_op = node.left_operand
             right_op = node.right_operand
             return "(#{left_op.traverse(self, payload)} #{operation} #{right_op.traverse(self, payload)})"
@@ -413,7 +406,6 @@ module Ast
         #----------------------------------#
 
         def visit_and(node, payload)
-            # Nice factoring.
             visit_binary(node, "&&", payload)
         end
 
@@ -503,9 +495,6 @@ module Ast
     class Evaluator
         def visit_integer(node, payload)
             # checking against default Ruby type
-            # There should be no need to typecheck the primitives. Ultimately
-            # the parser should never build a primitive that doesn't have the
-            # right type.
             if !node.value.is_a?(Integer)
                 raise TypeError, "Not an integer: #{node.value}"
             end
@@ -550,7 +539,6 @@ module Ast
         #----------------------------------#
         #  ____ NUMERIC VALIDATORS ____    #
         #----------------------------------#
-        # Nice factoring.
         def validate_numeric_binary(node, payload)
             left = node.left_operand.traverse(self, payload)
             if !left.is_a?(NumberP)
