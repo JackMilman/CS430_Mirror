@@ -15,40 +15,52 @@ module Interp
     end
 
     class Lexer
-        def initialize(string)
-            @string = string
+        def initialize(code)
+            @code = code
+            @start_idx = 0
+            @idx = 0
+            @tokens = []
         end
 
         def has_digit
             # current character is a number value within 0-9
+            @code[@idx].match?(/[0-9]/)
         end
 
         def has_letter
             # current character is a letter value within A-Z or a-z
+            @code[@idx].match?(/[a-zA-Z]/)
         end
 
         def has(key)
             # current character equals passed key
-        end
-
-        def advance
-            # moves ahead without capturing the character: essentially ignores it
-        end
-
-        def capture
-            # takes the current character and appends it to the current token then moves to the next character
-        end
-
-        def abandon
-            # abandons whatever token we were working on
-        end
-
-        def emit_token
-            # shoots out whatever token we currently have into the void.
+            @code[@idx].match?()
         end
 
         def lex
+            token_so_far = ""
 
+            def advance
+                # moves ahead without capturing the character: essentially ignores it
+                @idx += 1
+            end
+    
+            def capture
+                # takes the current character and appends it to the current token then moves to the next character
+                token_so_far += @code[@idx]
+            end
+    
+            def abandon
+                # abandons whatever token we were working on
+            end
+    
+            def emit_token
+                # shoots out whatever token we currently have into the void.
+            end
+
+            while @idx < @code.length
+                
+            end
         end
     end
 
