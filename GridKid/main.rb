@@ -9,14 +9,14 @@ require_relative 'ast_tests/cell_tests.rb'
 eval = Ast::Evaluator.new
 ser = Ast::Serializer.new
 
-# puts
-# puts "------PRIMITIVE SERIALIZATION TESTS------"
-# PrimitiveTests::Test.new.run_tests_serial(ser, Ast::Runtime.new)
-# puts
+puts
+puts "------PRIMITIVE SERIALIZATION TESTS------"
+PrimitiveTests::Test.new.run_tests_serial(ser, Ast::Runtime.new)
+puts
 
-# puts "------PRIMITIVE EVALUATION TESTS------"
-# PrimitiveTests::Test.new.run_tests_eval(eval, ser, Ast::Runtime.new)
-# puts
+puts "------PRIMITIVE EVALUATION TESTS------"
+PrimitiveTests::Test.new.run_tests_eval(eval, ser, Ast::Runtime.new)
+puts
 
 # puts "------ARITHMETIC SERIALIZATION TESTS------"
 # ArithTests::Test.new.run_tests_serial(ser, Ast::Runtime.new)

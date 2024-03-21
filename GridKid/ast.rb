@@ -7,9 +7,11 @@ module Ast
 
     class NumberP < Number
         attr_reader :value
+        attr_reader :indices
 
-        def initialize(value)
+        def initialize(value, indices = nil)
             @value = value
+            @indices = indices
         end
     end
 
@@ -28,10 +30,12 @@ module Ast
     class NumberBinary < Number
         attr_reader :left_operand
         attr_reader :right_operand
+        attr_reader :indices
         
-        def initialize(left, right)
+        def initialize(left, right, indices = nil)
             @left_operand = left
             @right_operand = right
+            @indices = indices
         end
     end
 
@@ -103,9 +107,11 @@ module Ast
 
     class NumberUnary < Number
         attr_reader :operand
+        attr_reader :indices
         
-        def initialize(operand)
+        def initialize(operand, indices = nil)
             @operand = operand
+            @indices = indices
         end
     end
 
@@ -140,9 +146,11 @@ module Ast
 
     class BooleanP < Boolean
         attr_reader :value
+        attr_reader :indices
 
-        def initialize(value)
+        def initialize(value, indices = nil)
             @value = value
+            @indices = indices
         end
 
         def traverse(visitor, payload)
@@ -153,10 +161,12 @@ module Ast
     class BooleanBinary < Boolean
         attr_reader :left_operand
         attr_reader :right_operand
+        attr_reader :indices
         
-        def initialize(left, right)
+        def initialize(left, right, indices = nil)
             @left_operand = left
             @right_operand = right
+            @indices = indices
         end
     end
 
@@ -210,9 +220,11 @@ module Ast
 
     class BooleanUnary < Boolean
         attr_reader :operand
+        attr_reader :indices
         
-        def initialize(operand)
+        def initialize(operand, indices = nil)
             @operand = operand
+            @indices = indices
         end
     end
 
@@ -224,9 +236,11 @@ module Ast
 
     class StringP
         attr_reader :value
+        attr_reader :indices
 
-        def initialize(value)
+        def initialize(value, indices = nil)
             @value = value
+            @indices = indices
         end
 
         def traverse(visitor, payload)
@@ -237,10 +251,12 @@ module Ast
     class CellAddressP
         attr_reader :row
         attr_reader :column
+        attr_reader :indices
 
-        def initialize(row, column)
+        def initialize(row, column, indices = nil)
             @row = row
             @column = column
+            @indices = indices
         end
 
         def traverse(visitor, payload)
@@ -252,10 +268,12 @@ module Ast
     class CellReference
         attr_reader :row
         attr_reader :column
+        attr_reader :indices
 
-        def initialize(row, column)
+        def initialize(row, column, indices = nil)
             @row = row
             @column = column
+            @indices = indices
         end
     end
 
@@ -275,10 +293,12 @@ module Ast
     class CellFunction
         attr_reader :first
         attr_reader :last
+        attr_reader :indices
 
-        def initialize(first, last)
+        def initialize(first, last, indices = nil)
             @first = first
             @last = last
+            @indices = indices
         end
     end
 

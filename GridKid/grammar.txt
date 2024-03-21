@@ -1,42 +1,43 @@
-expression = 
+expression = - exponential
+    | ~ exponential
+    | ! exponential
+    | exponential
 
-arithmetic = arithmetic EXPONENTIATE bitwise
-    | arithmetic MULTIPLY bitwise
-    | arithmetic DIVIDE bitwise
-    | arithmetic MODULO bitwise
-    | arithmetic ADD bitwise
-    | arithmetic SUBTRACT bitwise
-    | NEGATE arithmetic
+exponential = multiplicative ** exponential
+    | multiplicative
+
+multiplicative = multiplicative * arithmetic
+    | multiplicative / arithmetic
+    | multiplicative % arithmetic
+    | arithmetic
+
+arithmetic = arithmetic + bitwise
+    | arithmetic - bitwise
     | bitwise
 
-bitwise = bitwise BIT_AND relational
-    | bitwise BIT_OR relational
-    | bitwise BIT_XOR relational
-    | bitwise BIT_NOT relational
-    | bitwise BIT_LEFT_SHIFT relational
-    | bitwise BIT_RIGHT_SHIFT relational
+bitwise = bitwise & relational
+    | bitwise | relational
+    | bitwise ^ relational
+    | bitwise << relational
+    | bitwise >> relational
     | relational
 
-relational = relational EQUALS logic
-    | relational NOT_EQUALS logic
-    | relational LESS_THAN logic
-    | relational LESS_THAN_EQUAL logic
-    | relational GREATER_THAN logic
-    | relational GREATER_THAN_EQUAL logic
+relational = relational == logic
+    | relational != logic
+    | relational < logic
+    | relational <= logic
+    | relational >= logic
+    | relational >= logic
     | logic
 
-logic = logic AND atom
-    | logic OR atom
-    | NOT atom
+logic = logic && atom
+    | logic || atom
     | atom
 
 atom = INT
     | FLOAT
     | BOOLEAN
     | STRING
-    | CELL_ADDRESS
     | 
-    | CAST_TO_INT LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
-    | CAST_TO_FLOAT LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
     | LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
 ### TODO: Add cells and statistical functions as well to this
