@@ -16,24 +16,24 @@ require_relative './interp.rb'
 # puts lexer_test1.has_digit
 # puts lexer_test2.has_digit
 
-tester = Interp::Lexer.new("5 <= 32.0")
-# toks = tester.lex
-# toks.each{|tok| puts tok.inspect}
+tester = Interp::Lexer.new("5 <= 32.0 - 25")
+toks = tester.lex
+toks.each{|tok| puts tok.inspect}
 
 # puts
 # tester.reset("5 + 2 * 3 % 4")
 # toks = tester.lex
 # toks.each{|tok| puts tok.inspect}
 
-puts
-tester.reset("1 + 1 * 8") # TODO: should be giving 9, is giving 16
-toks = tester.lex
-toks.each{|tok| puts tok.inspect}
+# puts
+# tester.reset("1 + 1 * 8") # TODO: should be giving 9, is giving 16
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
 
-puts
-tester.reset("2 ** 4 ** 2") # TODO: should be giving 65,536
-toks = tester.lex
-toks.each{|tok| puts tok.inspect}
+# puts
+# tester.reset("2 ** 4 ** 2") # TODO: should be giving 65,536
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
 
 # puts
 # tester.reset("5 False")
@@ -71,9 +71,31 @@ toks.each{|tok| puts tok.inspect}
 # toks.each{|tok| puts tok.inspect}
 
 puts
+tester.reset("6 + (1 + -5)") # expected 2
+toks = tester.lex
+toks.each{|tok| puts tok.inspect}
+
+# puts
+# tester.reset("6 + (1 + -5") # expected fail
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
+
+# puts
+# tester.reset("1 - 1 0]")
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
+
+# puts
+# tester.reset("1 - 1 0]") # expected fail
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
+
+puts
+puts "TREE:"
 parser = Interp::Parser.new(toks)
 expr = parser.parse
 puts expr.inspect
-
+puts
+puts "RESULTS:"
 eval = Ast::Evaluator.new
 puts expr.traverse(eval, nil).value

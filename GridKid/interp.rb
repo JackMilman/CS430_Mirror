@@ -371,6 +371,7 @@ module Interp
         def initialize(tokens)
             @tokens = tokens
             @token_idx = 0
+            @handling_cell_ref = false
         end
 
         def parse
@@ -385,9 +386,138 @@ module Interp
             def advance
                 @token_idx += 1
             end
-            
+
+            # This method seems to be necessary to deal with malformed code
+            # like "1 - 1, 0]", since expression() will usually exit once
+            # it reaches an token not handled by the recursive level it's at.
+            def wrapper
+                root = nil
+                while in_bounds
+                    root = expression
+                end
+                return root
+            end
+
             def expression
-                # exponential # TODO: Is this correct? It feels wrong
+                logic
+            end
+
+            def logic
+                left = relational
+                # start_i = left.indices[0]
+                while has(:and)
+                    start_i = left.indices[0]
+                    if has(:and)
+                        advance
+                        right = relational
+                        end_i = right.indices[1]
+                        left = Ast::And.new(left, right)
+                    end
+                end
+                return left
+            end
+
+            def relational
+                left = bitwise
+                # start_i = left.indices[0]
+                while has(:equals) || has(:less_than_equal)
+                    start_i = left.indices[0]
+                    if has(:equals)
+                        advance
+                        right = bitwise
+                        end_i = right.indices[1]
+                        left = Ast::Equals.new(left, right, [start_i, end_i])
+                    elsif has(:less_than_equal)
+                        advance
+                        right = bitwise
+                        end_i = right.indices[1]
+                        left = Ast::LessThanEqualTo.new(left, right, [start_i, end_i])
+                    end
+                end
+                return left
+            end
+            
+            def bitwise
+                left = arithmetic
+                # start_i = left.indices[0]
+                while has(:bitwise_and) || has(:bitwise_or) || has(:bitwise_xor) || has(:bitwise_left_shift) || has(:bitwise_right_shift)
+                    start_i = left.indices[0]
+                    if has(:bitwise_and)
+                        advance
+                        right = arithmetic
+                        end_i = right.indices[1]
+                        left = Ast::BitwiseAnd.new(left, right, [start_i, end_i])
+                    elsif has(:bitwise_or)
+                        advance
+                        right = arithmetic
+                        end_i = right.indices[1]
+                        left = Ast::BitwiseOr.new(left, right, [start_i, end_i])
+                    elsif has(:bitwise_xor)
+                        advance
+                        right = arithmetic
+                        end_i = right.indices[1]
+                        left = Ast::BitwiseXor.new(left, right, [start_i, end_i])
+                    elsif has(:bitwise_left_shift)
+                        advance
+                        right = arithmetic
+                        end_i = right.indices[1]
+                        left = Ast::BitwiseLeftShift.new(left, right, [start_i, end_i])
+                    elsif has(:bitwise_right_shift)
+                        advance
+                        right = arithmetic
+                        end_i = right.indices[1]
+                        left = Ast::BitwiseRightShift.new(left, right, [start_i, end_i])
+                    end
+                end
+                return left
+            end
+
+            def arithmetic
+                left = multiplicative
+                # start_i = left.indices[0]
+                while has(:add) || has(:minus)
+                    start_i = left.indices[0]
+                    if has(:add)
+                        advance
+                        right = multiplicative
+                        end_i = right.indices[1]
+                        left = Ast::Add.new(left, right, [start_i, end_i])
+                    elsif has(:minus)
+                        advance
+                        right = multiplicative
+                        end_i = right.indices[1]
+                        left = Ast::Subtract.new(left, right, [start_i, end_i])
+                    end
+                end
+                return left
+            end
+
+            def multiplicative
+                left = unary
+                # start_i = left.indices[0]
+                while has(:multiply) || has(:divide) || has(:modulo)
+                    start_i = left.indices[0]
+                    if has(:multiply)
+                        advance
+                        right = unary
+                        end_i = right.indices[1]
+                        left = Ast::Multiply.new(left, right, [start_i, end_i])
+                    elsif has(:divide)
+                        advance
+                        right = unary
+                        end_i = right.indices[1]
+                        left = Ast::Divide.new(left, right, [start_i, end_i])
+                    elsif has(:modulo)
+                        advance
+                        right = unary
+                        end_i = right.indices[1]
+                        left = Ast::Modulo.new(left, right, [start_i, end_i])
+                    end
+                end
+                return left
+            end
+
+            def unary
                 if has(:minus)
                     start_i = @tokens[@token_idx].start_idx
                     advance
@@ -412,100 +542,14 @@ module Interp
             end
 
             def exponential
-                left = multiplicative
-                start_i = left.indices[0]
+                left = atom
+                # start_i = left.indices[0]
                 if has(:exponentiate)
+                    start_i = left.indices[0]
                     advance
                     right = exponential
                     end_i = right.indices[1]
                     left = Ast::Exponent.new(left, right, [start_i, end_i])
-                end
-                return left
-            end
-
-            def multiplicative
-                left = arithmetic
-                print "#{left.inspect}\n"
-                start_i = left.indices[0]
-                while has(:multiply) || has(:divide) || has(:modulo)
-                    if has(:multiply)
-                        advance
-                        right = arithmetic
-                        print "#{right.inspect}\n"
-                        end_i = right.indices[1]
-                        left = Ast::Multiply.new(left, right, [start_i, end_i])
-                    elsif has(:divide)
-                        advance
-                        right = arithmetic
-                        end_i = right.indices[1]
-                        left = Ast::Divide.new(left, right, [start_i, end_i])
-                    elsif has(:modulo)
-                        advance
-                        right = arithmetic
-                        end_i = right.indices[1]
-                        left = Ast::Modulo.new(left, right, [start_i, end_i])
-                    end
-                end
-                return left
-            end
-
-            def arithmetic
-                left = bitwise
-                start_i = left.indices[0]
-                while has(:add)
-                    if has(:add)
-                        advance
-                        right = bitwise
-                        end_i = right.indices[1]
-                        left = Ast::Add.new(left, right, [start_i, end_i])
-                    end
-                end
-                return left
-            end
-
-            def bitwise
-                left = relational
-                start_i = left.indices[0]
-                while has(:bitwise_and)
-                    if has(:bitwise_and)
-                        advance
-                        right = relational
-                        end_i = right.indices[1]
-                        left = Ast::BitwiseAnd.new(left, right, [start_i, end_i])
-                    end
-                end
-                return left
-            end
-
-            def relational
-                left = logic
-                start_i = left.indices[0]
-                while has(:equals) || has(:less_than_equal)
-                    if has(:equals)
-                        advance
-                        right = logic
-                        end_i = right.indices[1]
-                        left = Ast::Equals.new(left, right, [start_i, end_i])
-                    elsif has(:less_than_equal)
-                        advance
-                        right = logic
-                        end_i = right.indices[1]
-                        left = Ast::LessThanEqualTo.new(left, right, [start_i, end_i])
-                    end
-                end
-                return left
-            end
-
-            def logic
-                left = atom
-                start_i = left.indices[0]
-                while has(:and)
-                    if has(:and)
-                        advance
-                        right = atom
-                        end_i = right.indices[1]
-                        left = Ast::And.new(left, right)
-                    end
                 end
                 return left
             end
@@ -527,16 +571,64 @@ module Interp
                     advance
                 elsif has(:string_literal)
                     end_i = quark.end_idx
-                    value = quark.source[1...quark.source.length - 1]
+                    value = quark.source[1...quark.source.length - 1] # removes the "" marks
                     quark = Ast::StringP.new(value, [start_i, end_i])
                     advance
-                # else
-                #     return expression
+                elsif has(:left_parenthesis)
+                    advance
+                    quark = expression 
+                    if not has(:right_parenthesis)
+                        raise TypeError, "Expected closing Parentheses" # TODO: add index printed
+                    end
+                    advance
+                elsif has(:hash)
+                    advance
+                    quark = handle_cell_address(start_i, true)
+                elsif has(:left_bracket)
+                    quark = handle_cell_address(start_i, false)
+                elsif has(:comma)
+                    if !@handling_cell_ref
+                        raise TypeError, "Unexpected comma" #TODO: add index
+                    end
+                elsif has(:right_bracket)
+                    if !@handling_cell_ref
+                        raise TypeError, "Unexpected right Bracket" #TODO: add index
+                    end
                 end
+                # puts "Index: #{start_i}"
                 return quark
             end
 
-            return expression
+            return wrapper
+        end
+
+        def handle_cell_address(start_i, r_val)
+            result = nil
+            @handling_cell_ref = true
+            if has(:left_bracket)
+                advance
+                left = expression
+                if has(:comma)
+                    advance
+                    right = expression
+                    if not has(:right_bracket)
+                        raise TypeError, "Expected closing Bracket" # TODO: add index printed
+                    end
+                    end_i = @tokens[@token_idx].end_idx
+                    advance
+                    if r_val
+                        result = Ast::CellRValue.new(left, right, [start_i, end_i])
+                    else
+                        result = Ast::CellLValue.new(left, right, [start_i, end_i])
+                    end
+                else
+                    raise TypeError, "Expected Comma for Cell Reference" # TODO: add index printed
+                end
+            else
+                raise TypeError, "Expected opening Bracket for Cell Reference" # TODO: add index printed
+            end
+            @handling_cell_ref = false
+            return result
         end
     end
 end
