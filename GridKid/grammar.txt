@@ -1,43 +1,46 @@
-expression = - exponential
-    | ~ exponential
-    | ! exponential
-    | exponential
+expression = logic
 
-exponential = multiplicative ** exponential
-    | multiplicative
-
-multiplicative = multiplicative * arithmetic
-    | multiplicative / arithmetic
-    | multiplicative % arithmetic
-    | arithmetic
-
-arithmetic = arithmetic + bitwise
-    | arithmetic - bitwise
-    | bitwise
-
-bitwise = bitwise & relational
-    | bitwise | relational
-    | bitwise ^ relational
-    | bitwise << relational
-    | bitwise >> relational
+logic = logic && relational
+    | logic || relational
     | relational
 
-relational = relational == logic
-    | relational != logic
-    | relational < logic
-    | relational <= logic
-    | relational >= logic
-    | relational >= logic
-    | logic
+relational = relational == bitwise
+    | relational != bitwise
+    | relational < bitwise
+    | relational <= bitwise
+    | relational > bitwise
+    | relational >= bitwise
+    | bitwise
 
-logic = logic && atom
-    | logic || atom
+bitwise = bitwise & arithmetic
+    | bitwise | arithmetic
+    | bitwise ^ arithmetic
+    | bitwise << arithmetic
+    | bitwise >> arithmetic
+    | arithmetic
+
+arithmetic = arithmetic + multiplicative
+    | arithmetic - multiplicative
+    | multiplicative
+
+multiplicative = multiplicative * unary
+    | multiplicative / unary
+    | multiplicative % unary
+    | unary
+
+unary = - exponential
+    | ! exponential
+    | ~ exponential
+    | exponential
+
+exponential = atom ** exponential
     | atom
 
 atom = INT
     | FLOAT
     | BOOLEAN
     | STRING
-    | 
     | LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
+    | LEFT_BRACKET expression COMMA expression RIGHT_BRACKET
+    | HASH LEFT_BRACKET expression COMMA expression RIGHT_BRACKET
 ### TODO: Add cells and statistical functions as well to this
