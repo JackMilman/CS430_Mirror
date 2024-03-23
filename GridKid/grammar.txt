@@ -40,7 +40,12 @@ atom = INT
     | FLOAT
     | BOOLEAN
     | STRING
-    | LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
-    | LEFT_BRACKET expression COMMA expression RIGHT_BRACKET
-    | HASH LEFT_BRACKET expression COMMA expression RIGHT_BRACKET
-### TODO: Add cells and statistical functions as well to this
+    | ( expression )
+    | [ expression , expression ]
+    | # [ expression , expression ]
+    | MAX ( [ expression , expression ] , [ expression , expression ] )
+    | MIN ( [ expression , expression ] , [ expression , expression ] )
+    | MEAN ( [ expression , expression ] , [ expression , expression ] )
+    | SUM ( [ expression , expression ] , [ expression , expression ] )
+    | FLOAT_CAST ( expression )
+    | INT_CAST (expression )
