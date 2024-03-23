@@ -372,6 +372,7 @@ module Interp
             @tokens = tokens
             @token_idx = 0
             @handling_cell_ref = false
+            @handling_statistical = false
         end
 
         def parse
@@ -404,14 +405,18 @@ module Interp
 
             def logic
                 left = relational
-                # start_i = left.indices[0]
-                while has(:and)
+                while has_logic
                     start_i = left.indices[0]
                     if has(:and)
                         advance
                         right = relational
                         end_i = right.indices[1]
                         left = Ast::And.new(left, right)
+                    elsif has(:or)
+                        advance
+                        right = relational
+                        end_i = right.indices[1]
+                        left = Ast::Or.new(left, right)
                     end
                 end
                 return left
@@ -419,19 +424,38 @@ module Interp
 
             def relational
                 left = bitwise
-                # start_i = left.indices[0]
-                while has(:equals) || has(:less_than_equal)
+                while has_relational
                     start_i = left.indices[0]
                     if has(:equals)
                         advance
                         right = bitwise
                         end_i = right.indices[1]
                         left = Ast::Equals.new(left, right, [start_i, end_i])
+                    elsif has(:not_equals)
+                        advance
+                        right = bitwise
+                        end_i = right.indices[1]
+                        left = Ast::NotEquals.new(left, right, [start_i, end_i])
+                    elsif has(:less_than)
+                        advance
+                        right = bitwise
+                        end_i = right.indices[1]
+                        left = Ast::LessThan.new(left, right, [start_i, end_i])
                     elsif has(:less_than_equal)
                         advance
                         right = bitwise
                         end_i = right.indices[1]
                         left = Ast::LessThanEqualTo.new(left, right, [start_i, end_i])
+                    elsif has(:greater_than)
+                        advance
+                        right = bitwise
+                        end_i = right.indices[1]
+                        left = Ast::GreaterThan.new(left, right, [start_i, end_i])
+                    elsif has(:greater_than_equal)
+                        advance
+                        right = bitwise
+                        end_i = right.indices[1]
+                        left = Ast::GreaterThanEqualTo.new(left, right, [start_i, end_i])
                     end
                 end
                 return left
@@ -439,8 +463,7 @@ module Interp
             
             def bitwise
                 left = arithmetic
-                # start_i = left.indices[0]
-                while has(:bitwise_and) || has(:bitwise_or) || has(:bitwise_xor) || has(:bitwise_left_shift) || has(:bitwise_right_shift)
+                while has_bitwise
                     start_i = left.indices[0]
                     if has(:bitwise_and)
                         advance
@@ -474,8 +497,7 @@ module Interp
 
             def arithmetic
                 left = multiplicative
-                # start_i = left.indices[0]
-                while has(:add) || has(:minus)
+                while has_arithmetic
                     start_i = left.indices[0]
                     if has(:add)
                         advance
@@ -494,8 +516,7 @@ module Interp
 
             def multiplicative
                 left = unary
-                # start_i = left.indices[0]
-                while has(:multiply) || has(:divide) || has(:modulo)
+                while has_multiplicative
                     start_i = left.indices[0]
                     if has(:multiply)
                         advance
@@ -543,7 +564,6 @@ module Interp
 
             def exponential
                 left = atom
-                # start_i = left.indices[0]
                 if has(:exponentiate)
                     start_i = left.indices[0]
                     advance
@@ -583,18 +603,41 @@ module Interp
                     advance
                 elsif has(:hash)
                     advance
-                    quark = handle_cell_address(start_i, true)
+                    quark = handle_cell_address(start_i, true) # is an rvalue
                 elsif has(:left_bracket)
-                    quark = handle_cell_address(start_i, false)
+                    quark = handle_cell_address(start_i, false) # is not an rvalue
                 elsif has(:comma)
-                    if !@handling_cell_ref
+                    if !(@handling_cell_ref || @handling_statistical)
                         raise TypeError, "Unexpected comma" #TODO: add index
                     end
                 elsif has(:right_bracket)
-                    if !@handling_cell_ref
+                    if !(@handling_cell_ref || @handling_statistical)
                         raise TypeError, "Unexpected right Bracket" #TODO: add index
                     end
+                elsif has(:max_func)
+                    quark = handle_statistical(start_i, :max_func)
+                elsif has(:min_func)
+                    quark = handle_statistical(start_i, :min_func)
+                elsif has(:mean_func)
+                    quark = handle_statistical(start_i, :mean_func)
+                elsif has(:sum_func)
+                    quark = handle_statistical(start_i, :sum_func)
+                elsif has(:float_cast)
+                    advance
+                    value = expression
+                    # hacky, but seems to work well. I am not sure how to deal with 
+                    # the problem of not having direct access to the last 
+                    # parenthesis cleanly.       |
+                    #                            V
+                    end_i = @tokens[@token_idx - 1].start_idx
+                    quark = Ast::CastIntToFloat.new(value, [start_i, end_i])
+                elsif has(:int_cast)
+                    advance
+                    value = expression
+                    end_i = @tokens[@token_idx - 1].start_idx
+                    quark = Ast::CastFloatToInt.new(value, [start_i, end_i])
                 end
+
                 # puts "Index: #{start_i}"
                 return quark
             end
@@ -602,6 +645,35 @@ module Interp
             return wrapper
         end
 
+        #----------------------------------#
+        #    !!! COMPARISON HELPERS !!!    #
+        #----------------------------------#
+        def has_logic
+            has(:and) || has(:or)
+        end
+
+        def has_relational
+            has(:equals) || has(:not_equals) || has(:less_than) || \
+            has(:less_than_equal) || has(:greater_than) || \
+            has(:greater_than_equal)
+        end
+
+        def has_bitwise
+            has(:bitwise_and) || has(:bitwise_or) || has(:bitwise_xor) || \
+            has(:bitwise_left_shift) || has(:bitwise_right_shift)
+        end
+
+        def has_arithmetic
+            has(:add) || has(:minus)
+        end
+
+        def has_multiplicative
+            has(:multiply) || has(:divide) || has(:modulo)
+        end
+
+        #----------------------------------#
+        #      !!! ATOMIC HELPERS !!!      #
+        #----------------------------------#
         def handle_cell_address(start_i, r_val)
             result = nil
             @handling_cell_ref = true
@@ -628,6 +700,40 @@ module Interp
                 raise TypeError, "Expected opening Bracket for Cell Reference" # TODO: add index printed
             end
             @handling_cell_ref = false
+            return result
+        end
+
+        def handle_statistical(start_i, type)
+            result = nil
+            @handling_statistical = true
+            advance
+            if has(:left_parenthesis)
+                advance
+                left = expression
+                if has(:comma)
+                    advance
+                    right = expression
+                    if not has(:right_parenthesis)
+                        raise TypeError, "Expected closing Parenthesis for Statistical Function"
+                    end
+                    end_i = @tokens[@token_idx].end_idx
+                    advance
+                    if type == :max_func
+                        result = Ast::Max.new(left, right, [start_i, end_i])
+                    elsif type == :min_func
+                        result = Ast::Min.new(left, right, [start_i, end_i])
+                    elsif type == :mean_func
+                        result = Ast::Mean.new(left, right, [start_i, end_i])
+                    elsif type == :sum_func
+                        result = Ast::Sum.new(left, right, [start_i, end_i])
+                    end
+                else
+                    raise TypeError, "Expected Comma for Statistical Function" # TODO: add index printed
+                end
+            else
+                raise TypeError, "Expected opening Parenthesis for Statistical Function" # TODO: add index printed
+            end
+            @handling_statistical = false
             return result
         end
     end

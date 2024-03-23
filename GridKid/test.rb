@@ -16,9 +16,11 @@ require_relative './interp.rb'
 # puts lexer_test1.has_digit
 # puts lexer_test2.has_digit
 
-tester = Interp::Lexer.new("5 <= 32.0 - 25")
-toks = tester.lex
-toks.each{|tok| puts tok.inspect}
+tester = Interp::Lexer.new("")
+
+# tester.reset("5 <= 32.0 - 25")
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
 
 # puts
 # tester.reset("5 + 2 * 3 % 4")
@@ -70,10 +72,10 @@ toks.each{|tok| puts tok.inspect}
 # toks = tester.lex
 # toks.each{|tok| puts tok.inspect}
 
-puts
-tester.reset("6 + (1 + -5)") # expected 2
-toks = tester.lex
-toks.each{|tok| puts tok.inspect}
+# puts
+# tester.reset("6 + (1 + -5)") # expected 2
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
 
 # puts
 # tester.reset("6 + (1 + -5") # expected fail
@@ -89,6 +91,22 @@ toks.each{|tok| puts tok.inspect}
 # tester.reset("1 - 1 0]") # expected fail
 # toks = tester.lex
 # toks.each{|tok| puts tok.inspect}
+
+# puts
+# tester.reset("max([0, 0], [2, 1])")
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
+
+
+# puts
+# tester.reset("float(10) / 4.0")
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
+
+puts
+tester.reset("int(10.0) / 4.0")
+toks = tester.lex
+toks.each{|tok| puts tok.inspect}
 
 puts
 puts "TREE:"
