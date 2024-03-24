@@ -1,6 +1,6 @@
 #!usr/bin/env ruby
-require_relative './ast.rb'
-require_relative './interp.rb'
+require_relative '../ast.rb'
+require_relative '../interp.rb'
 
 # node = Ast::IntP.new(1)
 # puts node
