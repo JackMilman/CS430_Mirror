@@ -18,9 +18,9 @@ require_relative './interp.rb'
 
 tester = Interp::Lexer.new("")
 
-# tester.reset("5 <= 32.0 - 25")
-# toks = tester.lex
-# toks.each{|tok| puts tok.inspect}
+tester.reset("5 <= 32.0 - 25")
+toks = tester.lex
+toks.each{|tok| puts tok.inspect}
 
 # puts
 # tester.reset("5 + 2 * 3 % 4")
@@ -28,7 +28,7 @@ tester = Interp::Lexer.new("")
 # toks.each{|tok| puts tok.inspect}
 
 # puts
-# tester.reset("1 + 1 * 8") # TODO: should be giving 9, is giving 16
+# tester.reset("1 + 1 * 8")
 # toks = tester.lex
 # toks.each{|tok| puts tok.inspect}
 
@@ -43,7 +43,12 @@ tester = Interp::Lexer.new("")
 # toks.each{|tok| puts tok.inspect}
 
 # puts
-# tester.reset("5 Fals")
+# tester.reset("5 Fals") # expected fail
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
+
+# puts
+# tester.reset("5  + 3 - (0 + 123) =? 10") # expected fail
 # toks = tester.lex
 # toks.each{|tok| puts tok.inspect}
 
@@ -68,7 +73,7 @@ tester = Interp::Lexer.new("")
 # toks.each{|tok| puts tok.inspect}
 
 # puts
-# tester.reset("6 + -5")
+# tester.reset("6 - -5")
 # toks = tester.lex
 # toks.each{|tok| puts tok.inspect}
 
@@ -83,7 +88,12 @@ tester = Interp::Lexer.new("")
 # toks.each{|tok| puts tok.inspect}
 
 # puts
-# tester.reset("1 - 1 0]")
+# tester.reset("#[1 - 1, 0]")
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
+
+# puts
+# tester.reset("#1 - 1, 0]") # expected fail
 # toks = tester.lex
 # toks.each{|tok| puts tok.inspect}
 
@@ -97,16 +107,40 @@ tester = Interp::Lexer.new("")
 # toks = tester.lex
 # toks.each{|tok| puts tok.inspect}
 
+# puts
+# tester.reset("max([0, 0] [2, 1])") # expected fail comma
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
+
+# puts
+# tester.reset("max[0, 0], [2, 1])") # expected fail parens
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
+
+# puts
+# tester.reset("mead([0, 0], [2, 1])") # expected fail function
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
+
+# puts
+# tester.reset("(5 + 5) / 4.0")
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
 
 # puts
 # tester.reset("float(10) / 4.0")
 # toks = tester.lex
 # toks.each{|tok| puts tok.inspect}
 
-puts
-tester.reset("int(10.0) / 4.0")
-toks = tester.lex
-toks.each{|tok| puts tok.inspect}
+# puts
+# tester.reset("int(10.0) / 4.0")
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
+
+# puts
+# tester.reset("10.0 + 5.0)") # expected failure due to unpaired right parenthesis
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
 
 puts
 puts "TREE:"
