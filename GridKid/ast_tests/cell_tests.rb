@@ -138,11 +138,11 @@ module CellTests
             runtime.set_cell(cell_2_1, two)
             runtime.set_cell(cell_2_2, zero)
 
-            # runtime.dump_state
+            runtime.dump_state
             # expected structure:
             # |  0  |  12  |  -1  |
             # |  1  |   1  |  -2  |
-            # |  0  |   2  |   0  |
+            # |  0  | 2.5  |   0  |
         end
 
         def cell_l_value_tests_eval(eval, ser, runtime)
