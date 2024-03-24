@@ -829,91 +829,57 @@ module Ast
             return first, last
         end
 
-        def visit_max(node, payload)
-            # All four stats functions perform a similar traversal. Consider
-            # factoring out some of the grossness to a helper method.
+        def statistical_traverse(node, payload, type)
             addresses = validate_cell_func(node, payload)
-            max = payload.get_cell(addresses[0])
-            for i in addresses[0].row..addresses[1].row
-                for j in addresses[0].column..addresses[1].column
-                    addr = CellAddressP.new(i, j)
-                    tmp = payload.get_cell(addr)
-                    if tmp.is_a?(NumberP) and tmp.value > max.value
-                        max = tmp
-                    end
-                end
-            end
-            return max
-        end
-
-        def visit_min(node, payload)
-            addresses = validate_cell_func(node, payload)
-            min = payload.get_cell(addresses[0])
-            for i in addresses[0].row..addresses[1].row
-                for j in addresses[0].column..addresses[1].column
-                    addr = CellAddressP.new(i, j)
-                    tmp = payload.get_cell(addr)
-                    if tmp.is_a?(NumberP) and tmp.value < min.value
-                        min = tmp
-                    end
-                end
-            end
-            return min
-        end
-
-        def visit_mean(node, payload)
-            addresses = validate_cell_func(node, payload)
-            total = IntP.new(0)
+            result = (type == :max || type == :min) ? payload.get_cell(addresses[0]) : 0
             elements = 0
             is_float = false
+
             for i in addresses[0].row..addresses[1].row
                 for j in addresses[0].column..addresses[1].column
                     addr = CellAddressP.new(i, j)
                     tmp = payload.get_cell(addr)
                     if tmp.is_a?(NumberP)
-                        if tmp.is_a?(FloatP)
-                            is_float = true
-                        end
-                        if is_float
-                            total = FloatP.new(total.value + tmp.value)
-                        else
-                            total = IntP.new(total.value + tmp.value)
+                        if type == :max
+                            result = (tmp.value > result.value) ? tmp : result
+                        elsif type == :min
+                            result = (tmp.value < result.value) ? tmp : result
+                        else # mean and sum both accumulate their results
+                            if tmp.is_a?(FloatP)
+                                is_float = true
+                            end
+                            result = result + tmp.value
                         end
                         elements += 1
                     end
                 end
             end
-            if elements == 0
-                raise TypeError, "No valid numbers within range" 
+            
+            if type == :mean
+                if elements == 0
+                    raise TypeError, "No valid numbers within range" 
+                end
+                result = is_float ? FloatP.new(result / elements) : IntP.new(result / elements)
+            elsif type == :sum
+                result = is_float ? FloatP.new(result) : IntP.new(result)
             end
-            if is_float
-                return FloatP.new(total.value / elements)
-            else
-                return IntP.new(total.value / elements)
-            end
+            return result
+        end
+
+        def visit_max(node, payload)
+            return statistical_traverse(node, payload, :max)
+        end
+
+        def visit_min(node, payload)
+            return statistical_traverse(node, payload, :min)
+        end
+
+        def visit_mean(node, payload)
+            return statistical_traverse(node, payload, :mean)
         end
 
         def visit_sum(node, payload)
-            addresses = validate_cell_func(node, payload)
-            sum = IntP.new(0)
-            is_float = false
-            for i in addresses[0].row..addresses[1].row
-                for j in addresses[0].column..addresses[1].column
-                    addr = CellAddressP.new(i, j)
-                    tmp = payload.get_cell(addr)
-                    if tmp.is_a?(NumberP)
-                        if tmp.is_a?(FloatP)
-                            is_float = true
-                        end
-                        if is_float
-                            sum = FloatP.new(sum.value + tmp.value)
-                        else
-                            sum = IntP.new(sum.value + tmp.value)
-                        end
-                    end
-                end
-            end
-            return sum
+            return statistical_traverse(node, payload, :sum)
         end
     end
 
