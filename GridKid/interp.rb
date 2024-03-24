@@ -65,7 +65,7 @@ module Interp
                 elsif first == 's' && @token_so_far == "sum"
                     emit_token(:sum_func)
                 else
-                    raise TypeError, "Unknown function (#{@token_so_far}#{@code[@idx]}) at index: #{@start_idx}"
+                    raise TypeError, "Unknown function {#{@token_so_far}#{@code[@idx]}} at index: #{@start_idx}"
                 end
             end
 
@@ -182,7 +182,7 @@ module Interp
                         capture
                         emit_token(:equals) # ==
                     else
-                        raise TypeError, "Unknown symbol (#{@token_so_far + @code[@idx]}) at index: #{@start_idx}"
+                        raise TypeError, "Unknown symbol {#{@token_so_far + @code[@idx]}} at index: #{@start_idx}"
                     end
                 elsif has('<')
                     capture
@@ -229,6 +229,8 @@ module Interp
                     elsif has('e')
                         capture
                         lex_function('e', "an") # mean
+                    else
+                        raise TypeError, "Unknown function {#{@token_so_far}#{@code[@idx]}} at index: #{@start_idx}"
                     end
                 elsif has('s')
                     capture
@@ -266,7 +268,7 @@ module Interp
                     capture
                     emit_token(:right_parenthesis) # )
                 else
-                    raise TypeError, "Unknown token: #{@code[@idx]}"
+                    raise TypeError, "Unknown token (#{@code[@idx]}) at index: #{@idx}"
                 end
             end
 
@@ -602,7 +604,7 @@ module Interp
                     advance
                     right = expression
                     if not has(:right_bracket)
-                        raise TypeError, "Expected closing Bracket after index: #{right.indices[1]}"
+                        raise TypeError, "Expected closing Bracket at index: #{right.indices[1]}"
                     end
                     end_i = @tokens[@token_idx].end_idx
                     advance
@@ -612,10 +614,10 @@ module Interp
                         result = Ast::CellLValue.new(left, right, [start_i, end_i])
                     end
                 else
-                    raise TypeError, "Expected Comma for Cell Reference after index: #{left.indices[1]}"
+                    raise TypeError, "Expected Comma for Cell Reference at index: #{left.indices[1]}"
                 end
             else
-                raise TypeError, "Expected opening Bracket for Cell Reference after index: #{start_i}"
+                raise TypeError, "Expected opening Bracket for Cell Reference at index: #{start_i}"
             end
             @handling_cell_ref = false
             return result
@@ -626,7 +628,7 @@ module Interp
             advance
             quark = expression 
             if !has(:right_parenthesis)
-                raise TypeError, "Expected closing Parentheses after index: #{quark.indices[1]}"
+                raise TypeError, "Expected closing Parentheses at index: #{quark.indices[1]}"
             end
             advance
             @handling_parenthetical = false
@@ -658,10 +660,10 @@ module Interp
                         result = Ast::Sum.new(left, right, [start_i, end_i])
                     end
                 else
-                    raise TypeError, "Expected Comma for Statistical Function after index: #{left.indices[1]}"
+                    raise TypeError, "Expected Comma for Statistical Function at index: #{left.indices[1]}"
                 end
             else
-                raise TypeError, "Expected opening Parenthesis for Statistical Function after index: #{start_i}"
+                raise TypeError, "Expected opening Parenthesis for Statistical Function at index: #{start_i}"
             end
             @handling_statistical = false
             return result

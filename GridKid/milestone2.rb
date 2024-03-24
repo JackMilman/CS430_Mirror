@@ -48,10 +48,15 @@ puts
 lines_of_code.each do |line_of_code|
     puts "Original: #{line_of_code}"
     lexer.reset(line_of_code)
-    parser.reset(lexer.lex)
-    expr = parser.parse
-    # puts "Tree: #{expr.inspect}"
-    puts "Serialized: #{expr.traverse(ser, runt)}"
-    puts "Evaluated: #{expr.traverse(eval, runt).value}"
-    puts
+    begin
+        parser.reset(lexer.lex)
+        expr = parser.parse
+        # puts "Tree: #{expr.inspect}"
+        puts "Serialized: #{expr.traverse(ser, runt)}"
+        puts "Evaluated: #{expr.traverse(eval, runt).value}"
+        puts
+    rescue TypeError => err
+        puts "Caught error:\n\t#{err.message}"
+        puts
+    end
 end
