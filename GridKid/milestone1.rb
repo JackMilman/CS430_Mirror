@@ -1,10 +1,5 @@
 #!usr/bin/env ruby
 require_relative './ast.rb'
-require_relative './arithmetic_tests.rb'
-require_relative './bitwise_tests.rb'
-require_relative './logical_tests.rb'
-require_relative './primitive_tests.rb'
-require_relative './cell_tests.rb'
 
 eval = Ast::Evaluator.new
 ser = Ast::Serializer.new

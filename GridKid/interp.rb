@@ -18,7 +18,7 @@ module Interp
     #----------------------------------Lexer----------------------------------#
     #-------------------------------------------------------------------------#
     class Lexer
-        def initialize(code)
+        def initialize(code="")
             @code = code
             @start_idx = 0
             @idx = 0
@@ -28,7 +28,7 @@ module Interp
 
         # helper method for quickly resetting an individual lexer. Should
         # remove the need to create a brand new one every time.
-        def reset(new_code)
+        def reset(new_code="")
             @code = new_code
             @start_idx = 0
             @idx = 0
@@ -39,6 +39,34 @@ module Interp
         def lex
             def in_bounds
                 @idx < @code.length
+            end
+
+            def lex_function(first, rest)
+                # the rest of the expected function can be captured, or else a TypeError is raised
+                i = 0
+                while has(rest[i]) && i < rest.length
+                    capture
+                    i += 1
+                end
+                if first == 'F' && @token_so_far == "False"
+                    emit_token(:boolean_literal)
+                elsif first == 'T' && @token_so_far == "True"
+                    emit_token(:boolean_literal)
+                elsif first == 'f' && @token_so_far == "float"
+                    emit_token(:float_cast)
+                elsif first == 'i' && @token_so_far == "int"
+                    emit_token(:int_cast)
+                elsif first == 'a' && @token_so_far == "max"
+                    emit_token(:max_func)
+                elsif first == 'i' && @token_so_far == "min"
+                    emit_token(:min_func)
+                elsif first == 'e' && @token_so_far == "mean"
+                    emit_token(:mean_func)
+                elsif first == 's' && @token_so_far == "sum"
+                    emit_token(:sum_func)
+                else
+                    raise TypeError, "Unknown function {#{@token_so_far}#{@code[@idx]}} at index: #{@start_idx}"
+                end
             end
 
             def has_digit
@@ -154,7 +182,7 @@ module Interp
                         capture
                         emit_token(:equals) # ==
                     else
-                        raise TypeError, "Expected ==, lexed: =#{@code[@idx]}"
+                        raise TypeError, "Unknown symbol {#{@token_so_far + @code[@idx]}} at index: #{@start_idx}"
                     end
                 elsif has('<')
                     capture
@@ -180,150 +208,33 @@ module Interp
                     end
                 elsif has('F')
                     capture
-                    begin
-                        if has('a')
-                            capture
-                            if has('l')
-                                capture
-                                if has('s')
-                                    capture
-                                    if has('e')
-                                        capture
-                                        emit_token(:boolean_literal) # False
-                                    else
-                                        raise TypeError
-                                    end
-                                else
-                                    raise TypeError
-                                end
-                            else
-                                raise TypeError
-                            end
-                        else
-                            raise TypeError
-                        end
-                    rescue TypeError
-                        raise TypeError, "Improper Boolean token: #{@token_so_far}#{@code[@idx]}"
-                    end
+                    lex_function('F', "alse") # False
                 elsif has('T')
                     capture
-                    begin
-                        if has('r')
-                            capture
-                            if has('u')
-                                capture
-                                if has('e')
-                                    capture
-                                    emit_token(:boolean_literal) # True
-                                else
-                                    raise TypeError
-                                end
-                            else
-                                raise TypeError
-                            end
-                        else
-                            raise TypeError
-                        end
-                    rescue TypeError
-                        raise TypeError, "Improper Boolean token: #{@token_so_far}#{@code[@idx]}"
-                    end
+                    lex_function('T', "rue") # True
                 elsif has('f')
                     capture
-                    begin
-                    if has('l')
-                        capture
-                        if has('o')
-                            capture
-                            if has('a')
-                                capture
-                                if has('t')
-                                    capture
-                                    emit_token(:float_cast) # float
-                                else
-                                    raise TypeError
-                                end
-                            else
-                                raise TypeError
-                            end
-                        else
-                            raise TypeError
-                        end
-                    else
-                        raise TypeError
-                    end
-                    rescue TypeError
-                        raise TypeError, "Improper cast token: #{@token_so_far}#{@code[@idx]}"
-                    end
+                    lex_function('f', "loat") # float
                 elsif has('i')
-                    begin
-                        capture
-                        if has('n')
-                            capture
-                            if has('t')
-                                capture
-                                emit_token(:int_cast) # int
-                            else
-                                raise TypeError
-                            end
-                        else
-                            raise TypeError
-                        end
-                    rescue TypeError
-                        raise TypeError, "Improper cast token: #{@token_so_far}#{@code[@idx]}"
-                    end
+                    capture
+                    lex_function('i', "nt") # int
                 elsif has('m')
                     capture
-                    begin
-                        if has('a')
-                            capture
-                            if has('x')
-                                capture
-                                emit_token(:max_func) # max
-                            else
-                                raise TypeError
-                            end
-                        elsif has('i')
-                            capture
-                            if has('n')
-                                capture
-                                emit_token(:min_func) # min
-                            else
-                                raise TypeError
-                            end
-                        elsif has('e')
-                            capture
-                            if has('a')
-                                capture
-                                if has('n')
-                                    capture
-                                    emit_token(:mean_func) # mean
-                                else 
-                                    raise TypeError
-                                end
-                            else
-                                raise TypeError
-                            end
-                        end
-                    rescue TypeError
-                        raise TypeError, "Not a real function: #{@token_so_far}#{@code[@idx]}"
+                    if has('a')
+                        capture
+                        lex_function('a', "x") # max
+                    elsif has('i')
+                        capture
+                        lex_function('i', "n") # min
+                    elsif has('e')
+                        capture
+                        lex_function('e', "an") # mean
+                    else
+                        raise TypeError, "Unknown function {#{@token_so_far}#{@code[@idx]}} at index: #{@start_idx}"
                     end
                 elsif has('s')
-                    begin
-                        capture
-                        if has('u')
-                            capture
-                            if has('m')
-                                capture
-                                emit_token(:sum_func) # sum
-                            else
-                                raise TypeError
-                            end
-                        else
-                            raise TypeError
-                        end
-                    rescue TypeError
-                        raise TypeError, "Not a real function: #{@token_so_far}#{@code[@idx]}"
-                    end
+                    capture
+                    lex_function('s', "um")
                 elsif has('"')
                     capture
                     while in_bounds
@@ -357,7 +268,7 @@ module Interp
                     capture
                     emit_token(:right_parenthesis) # )
                 else
-                    raise TypeError, "Unknown token: #{@code[@idx]}"
+                    raise TypeError, "Unknown token (#{@code[@idx]}) at index: #{@idx}"
                 end
             end
 
@@ -373,6 +284,15 @@ module Interp
             @token_idx = 0
             @handling_cell_ref = false
             @handling_statistical = false
+            @handling_parenthetical = false
+        end
+
+        def reset(tokens)
+            @tokens = tokens
+            @token_idx = 0
+            @handling_cell_ref = false
+            @handling_statistical = false
+            @handling_parenthetical = false
         end
 
         def parse
@@ -595,12 +515,7 @@ module Interp
                     quark = Ast::StringP.new(value, [start_i, end_i])
                     advance
                 elsif has(:left_parenthesis)
-                    advance
-                    quark = expression 
-                    if not has(:right_parenthesis)
-                        raise TypeError, "Expected closing Parentheses" # TODO: add index printed
-                    end
-                    advance
+                    quark = handle_parenthetical
                 elsif has(:hash)
                     advance
                     quark = handle_cell_address(start_i, true) # is an rvalue
@@ -608,11 +523,15 @@ module Interp
                     quark = handle_cell_address(start_i, false) # is not an rvalue
                 elsif has(:comma)
                     if !(@handling_cell_ref || @handling_statistical)
-                        raise TypeError, "Unexpected comma" #TODO: add index
+                        raise TypeError, "Unexpected comma at index: #{start_i}"
                     end
                 elsif has(:right_bracket)
                     if !(@handling_cell_ref || @handling_statistical)
-                        raise TypeError, "Unexpected right Bracket" #TODO: add index
+                        raise TypeError, "Unexpected right Bracket at index: #{start_i}"
+                    end
+                elsif has(:right_parenthesis)
+                    if !(@handling_parenthetical)
+                        raise TypeError, "Unexpected right Parenthesis at index: #{start_i}"
                     end
                 elsif has(:max_func)
                     quark = handle_statistical(start_i, :max_func)
@@ -623,8 +542,8 @@ module Interp
                 elsif has(:sum_func)
                     quark = handle_statistical(start_i, :sum_func)
                 elsif has(:float_cast)
-                    advance
-                    value = expression
+                    advance                    
+                    value = handle_parenthetical
                     # hacky, but seems to work well. I am not sure how to deal with 
                     # the problem of not having direct access to the last 
                     # parenthesis cleanly.       |
@@ -633,12 +552,13 @@ module Interp
                     quark = Ast::CastIntToFloat.new(value, [start_i, end_i])
                 elsif has(:int_cast)
                     advance
-                    value = expression
+                    value = handle_parenthetical
                     end_i = @tokens[@token_idx - 1].start_idx
                     quark = Ast::CastFloatToInt.new(value, [start_i, end_i])
+                else
+                    raise TypeError, "Unknown token at index: #{quark.start_idx}, #{quark.end_idx}"
                 end
 
-                # puts "Index: #{start_i}"
                 return quark
             end
 
@@ -684,7 +604,7 @@ module Interp
                     advance
                     right = expression
                     if not has(:right_bracket)
-                        raise TypeError, "Expected closing Bracket" # TODO: add index printed
+                        raise TypeError, "Expected closing Bracket at index: #{right.indices[1]}"
                     end
                     end_i = @tokens[@token_idx].end_idx
                     advance
@@ -694,13 +614,25 @@ module Interp
                         result = Ast::CellLValue.new(left, right, [start_i, end_i])
                     end
                 else
-                    raise TypeError, "Expected Comma for Cell Reference" # TODO: add index printed
+                    raise TypeError, "Expected Comma for Cell Reference at index: #{left.indices[1]}"
                 end
             else
-                raise TypeError, "Expected opening Bracket for Cell Reference" # TODO: add index printed
+                raise TypeError, "Expected opening Bracket for Cell Reference at index: #{start_i}"
             end
             @handling_cell_ref = false
             return result
+        end
+
+        def handle_parenthetical
+            @handling_parenthetical = true
+            advance
+            quark = expression 
+            if !has(:right_parenthesis)
+                raise TypeError, "Expected closing Parentheses at index: #{quark.indices[1]}"
+            end
+            advance
+            @handling_parenthetical = false
+            return quark
         end
 
         def handle_statistical(start_i, type)
@@ -714,7 +646,7 @@ module Interp
                     advance
                     right = expression
                     if not has(:right_parenthesis)
-                        raise TypeError, "Expected closing Parenthesis for Statistical Function"
+                        raise TypeError, "Expected closing Parenthesis for Statistical Function after index: #{right.indices[1]}"
                     end
                     end_i = @tokens[@token_idx].end_idx
                     advance
@@ -728,10 +660,10 @@ module Interp
                         result = Ast::Sum.new(left, right, [start_i, end_i])
                     end
                 else
-                    raise TypeError, "Expected Comma for Statistical Function" # TODO: add index printed
+                    raise TypeError, "Expected Comma for Statistical Function at index: #{left.indices[1]}"
                 end
             else
-                raise TypeError, "Expected opening Parenthesis for Statistical Function" # TODO: add index printed
+                raise TypeError, "Expected opening Parenthesis for Statistical Function at index: #{start_i}"
             end
             @handling_statistical = false
             return result
