@@ -808,7 +808,7 @@ module Ast
         def visit_cell_r_value(node, payload)
             results = validate_cell(node, payload)
             address = CellAddressP.new(results[0].value, results[1].value)
-            return payload.get_cell(address)
+            return payload.get_cell(address).most_recent_p
         end
 
         #----------------------------------#
@@ -831,14 +831,14 @@ module Ast
 
         def statistical_traverse(node, payload, type)
             addresses = validate_cell_func(node, payload)
-            result = (type == :max || type == :min) ? payload.get_cell(addresses[0]) : 0
+            result = (type == :max || type == :min) ? payload.get_cell(addresses[0]).most_recent_p : 0
             elements = 0
             is_float = false
 
             for i in addresses[0].row..addresses[1].row
                 for j in addresses[0].column..addresses[1].column
                     addr = CellAddressP.new(i, j)
-                    tmp = payload.get_cell(addr)
+                    tmp = payload.get_cell(addr).most_recent_p
                     if tmp.is_a?(NumberP)
                         if type == :max
                             result = (tmp.value > result.value) ? tmp : result
@@ -919,10 +919,10 @@ module Ast
             end
         end
 
-        def set_cell(address, a_s_t, payload)
+        def set_cell(source, address, a_s_t, payload)
             validate_range(address)
             prim = a_s_t.traverse(Evaluator.new, payload)
-            @cell_grid[address.row][address.column] = Cell.new(nil, a_s_t, prim)
+            @cell_grid[address.row][address.column] = Cell.new(source, a_s_t, prim)
         end
 
         def get_cell(address)
@@ -931,7 +931,8 @@ module Ast
             if cell_val.most_recent_p == nil
                 raise UndefGridError, "Undefined cell"
             end
-            return cell_val.most_recent_p
+            # return cell_val.most_recent_p
+            return cell_val
         end
 
         def dump_state
@@ -963,8 +964,8 @@ module Ast
             @grid = Grid.new(size)
         end
 
-        def set_cell(address, a_s_t)
-            @grid.set_cell(address, a_s_t, self)
+        def set_cell(source, address, a_s_t)
+            @grid.set_cell(source, address, a_s_t, self)
         end
 
         def get_cell(address)
