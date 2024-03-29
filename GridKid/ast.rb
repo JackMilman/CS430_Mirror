@@ -929,7 +929,7 @@ module Ast
             validate_range(address)
             cell_val = @cell_grid[address.row][address.column]
             if cell_val.most_recent_p == nil
-                raise TypeError, "Undefined cell"
+                raise UndefGridError, "Undefined cell"
             end
             return cell_val.most_recent_p
         end
@@ -948,6 +948,9 @@ module Ast
                 puts
             end
         end
+    end
+
+    class UndefGridError < StandardError
     end
 
     #-------------------------------------------------------------------------#
@@ -971,5 +974,5 @@ module Ast
         def dump_state
             @grid.dump_state
         end
-    end
+    end    
 end
