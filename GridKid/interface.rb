@@ -9,7 +9,8 @@ module Interface
     class Program
         def initialize
             $runtime = Runtime.new
-            $runtime.set_cell(CellAddressP.new(4,9), IntP.new(5)) # TODO: REMOVE THIS VALUE, IT IS A TEST
+            $runtime.set_cell("5", CellAddressP.new(4,9), IntP.new(5)) # TODO: REMOVE THIS VALUE, IT IS A TEST
+            $runtime.set_cell("3 + 5", CellAddressP.new(0,1), Add.new(IntP.new(3), IntP.new(5))) # TODO: REMOVE THIS VALUE, IT IS A TEST
 
             @height = Curses.lines
             @width = Curses.cols
@@ -65,11 +66,11 @@ module Interface
             @id_w.addstr("\u2502")
 
             @w.setpos(0, 0)
-            @w.addstr(get_cell_val_string($grid_row, $grid_col, @width))
+            @w.addstr(get_cell_formula($grid_row, $grid_col, @width))
 
             horizontal_line(@id_w, 1, 0, @id_w_len)
             horizontal_line(@w, 1, 0, @width)
-            
+
             @id_w.refresh
             @w.refresh
         end
@@ -163,7 +164,19 @@ module Interface
         s = ""
         begin
             addr = CellAddressP.new(row, col)
-            val = $runtime.get_cell(addr).value
+            val = $runtime.get_cell(addr).most_recent_p.value
+            s = val.to_s
+        rescue UndefGridError
+            s = "NIL"
+        end
+        return truncate_s(s, max - 1).ljust((max - 1), ' ')
+    end
+
+    def get_cell_formula(row, col, max)
+        s = ""
+        begin
+            addr = CellAddressP.new(row, col)
+            val = $runtime.get_cell(addr).code
             s = val.to_s
         rescue UndefGridError
             s = "NIL"
