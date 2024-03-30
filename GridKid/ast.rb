@@ -921,17 +921,13 @@ module Ast
 
         def set_cell(source, address, a_s_t, payload)
             validate_range(address)
-            prim = a_s_t.traverse(Evaluator.new, payload)
+            prim = a_s_t != nil ? a_s_t.traverse(Evaluator.new, payload) : nil
             @cell_grid[address.row][address.column] = Cell.new(source, a_s_t, prim)
         end
 
         def get_cell(address)
             validate_range(address)
             cell_val = @cell_grid[address.row][address.column]
-            if cell_val.most_recent_p == nil
-                raise UndefGridError, "Undefined cell"
-            end
-            # return cell_val.most_recent_p
             return cell_val
         end
 
@@ -949,9 +945,6 @@ module Ast
                 puts
             end
         end
-    end
-
-    class UndefGridError < StandardError
     end
 
     #-------------------------------------------------------------------------#
