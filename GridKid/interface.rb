@@ -1,4 +1,9 @@
 require 'curses'
+require_relative './ast.rb'
+require_relative './interp.rb'
+
+include Ast
+include Interp
 include Curses
 
 module Interface
@@ -11,6 +16,10 @@ module Interface
             $runtime = Runtime.new
             $runtime.set_cell("5", CellAddressP.new(4,9), IntP.new(5)) # TODO: REMOVE THIS VALUE, IT IS A TEST
             $runtime.set_cell("3 + 5", CellAddressP.new(0,1), Add.new(IntP.new(3), IntP.new(5))) # TODO: REMOVE THIS VALUE, IT IS A TEST
+            $lexer = Lexer.new
+            $parser = Parser.new([])
+            $serial = Serializer.new
+            $eval = Evaluator.new
 
             @height = Curses.lines
             @width = Curses.cols
@@ -22,6 +31,7 @@ module Interface
         end
     
         def main_loop
+            noecho
             loop do
                 @main_window.setpos(0, 0)
                 char = @main_window.getch
@@ -36,13 +46,15 @@ module Interface
                     $grid_row = $grid_row > 0 ? $grid_row - 1 : 0
                 elsif char == Key::DOWN
                     $grid_row = $grid_row < $grid_size - 1 ? $grid_row + 1 : $grid_row
+                elsif char == 'E'
+                    @form.form_loop
                 end
                 
                 # draw and refresh affected windows
                 @form.f_refresh
                 @display.cd_refresh
                 @grid_w.cg_refresh
-                @main_window.setpos(0, @width - 50)
+                @main_window.setpos(0, 0)
             end
         end
     
@@ -65,14 +77,62 @@ module Interface
             @id_w.setpos(0, @id_w_len - 1)
             @id_w.addstr("\u2502")
 
-            @w.setpos(0, 0)
-            @w.addstr(get_cell_formula($grid_row, $grid_col, @width))
+            @w.setpos(0, 2)
+            @w.addstr(get_formula($grid_row, $grid_col, @width))
 
             horizontal_line(@id_w, 1, 0, @id_w_len)
             horizontal_line(@w, 1, 0, @width)
 
             @id_w.refresh
             @w.refresh
+        end
+
+        def form_loop
+            text = ''
+            loop do
+                @w.clear
+                @w.setpos(0, 2)
+                @w.addstr(text)
+                char = @w.getch
+                if char == '`' # cancel character
+                    break
+                elsif char == '@' # save/write character
+                    save_cell(text)
+                    break
+                elsif char == 127 # Backspace
+                    text.chop!
+                else
+                    text += char.to_s
+                end
+            end
+        end
+
+        def save_cell(text)
+            addr = CellAddressP.new($grid_row, $grid_col)
+            if text[0] != '='
+                if text == "True" || text == "False"
+                    val = text.downcase == "true"
+                    $runtime.set_cell(text, addr, BooleanP.new(val))
+                elsif text =~ /^[-+]?[0-9]*$/
+                    val = text.to_i
+                    $runtime.set_cell(text, addr, IntP.new(val))
+                elsif text=~ /^[-+]?[0-9]*\.?[0-9]+$/
+                    val = text.to_f
+                    $runtime.set_cell(text, addr, FloatP.new(val))
+                else
+                    val = "\"#{text}\""
+                    $runtime.set_cell(text, addr, StringP.new(val))
+                end
+            else
+                text = text[1...]
+                begin
+                    ast = lex_and_parse(text)
+                    prim = evaluate(ast)
+                    $runtime.set_cell(text, addr, prim)
+                rescue TypeError
+                    $runtime.set_cell(text, addr, nil)
+                end
+            end
         end
     end
 
@@ -93,8 +153,8 @@ module Interface
             @id_w.setpos(0, @id_w_len - 1)
             @id_w.addstr("\u2502")
 
-            @w.setpos(0, 0)
-            @w.addstr(get_cell_val_string($grid_row, $grid_col, @width))
+            @w.setpos(0, 2)
+            @w.addstr(display_cell($grid_row, $grid_col, @width, true))
 
             horizontal_line(@id_w, 1, 0, @id_w_len)
             horizontal_line(@w, 1, 0, @width)
@@ -124,6 +184,7 @@ module Interface
         end
 
         def draw_grid_template
+            col_end = @col_first + ($grid_size * @col_step)
             # populates row-indices and horizontal-separators
             idx = 0
             (1..@row_max).each do |row|
@@ -132,7 +193,7 @@ module Interface
                     @w.addstr("#{idx}")
                     idx += 1
                 else
-                    horizontal_line(@w, row, 0, @width)
+                    horizontal_line(@w, row, 0, col_end)
                 end
             end
             # populates column-indices and vertical-separators
@@ -141,7 +202,7 @@ module Interface
                 @w.addstr("#{col}")
                 vertical_line(@w, @col_first + (col * @col_step), 0, @row_max + 1)
             end
-            vertical_line(@w, @col_first + ($grid_size * @col_step), 0, @row_max + 1)
+            vertical_line(@w, col_end, 0, @row_max + 1)
         end
 
         def draw_grid_values
@@ -153,26 +214,14 @@ module Interface
                     if $grid_row == row && $grid_col == col
                         @w.attron(A_REVERSE)
                     end
-                    @w.addstr(get_cell_val_string(row, col, @col_step))
+                    @w.addstr(display_cell(row, col, @col_step, false))
                     @w.attroff(A_REVERSE)
                 end
             end
         end
     end
 
-    def get_cell_val_string(row, col, max)
-        s = ""
-        begin
-            addr = CellAddressP.new(row, col)
-            val = $runtime.get_cell(addr).most_recent_p.value
-            s = val.to_s
-        rescue UndefGridError
-            s = "NIL"
-        end
-        return truncate_s(s, max - 1).ljust((max - 1), ' ')
-    end
-
-    def get_cell_formula(row, col, max)
+    def get_formula(row, col, max)
         s = ""
         begin
             addr = CellAddressP.new(row, col)
@@ -198,8 +247,44 @@ module Interface
         end
     end
 
+    def display_cell(row, col, max, verbose)
+        s = ""
+        addr = CellAddressP.new(row, col)
+        cell = $runtime.get_cell(addr)
+        if cell.most_recent_p == nil
+            if cell.code == nil
+                s = "NIL"
+            else
+                begin
+                    ast = lex_and_parse(cell.code)
+                    prim = evaluate(ast)
+                    s = "#{prim.value}"
+                rescue TypeError => error
+                    s = verbose ? error.to_s : "ERROR"
+                end
+            end
+        else
+            begin
+                s = (cell.most_recent_p.value).to_s
+            rescue NoMethodError
+                s = "Cannot be resolved to a primitive value"
+            end
+        end
+        return truncate_s(s, max - 1).ljust((max - 1), ' ')
+    end
+
     # Helper method for cutting down a string to a preferred size
     def truncate_s(s, max)
         s.length > max ? "#{s[0...max]}" : s
+    end
+
+    def lex_and_parse(source)
+        $lexer.reset(source)
+        $parser.reset($lexer.lex)
+        $parser.parse
+    end
+
+    def evaluate(expression)
+        expression.traverse($eval, $runtime)
     end
 end
