@@ -223,12 +223,12 @@ module Interface
 
     def get_formula(row, col, max)
         s = ""
-        begin
-            addr = CellAddressP.new(row, col)
-            val = $runtime.get_cell(addr).code
-            s = val.to_s
-        rescue UndefGridError
+        addr = CellAddressP.new(row, col)
+        val = $runtime.get_cell(addr).code
+        if val == nil
             s = "NIL"
+        else
+            s = val
         end
         return truncate_s(s, max - 1).ljust((max - 1), ' ')
     end
