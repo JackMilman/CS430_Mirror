@@ -14,8 +14,7 @@ module Interface
     class Program
         def initialize
             $runtime = Runtime.new
-            $runtime.set_cell("5", CellAddressP.new(4,9), IntP.new(5)) # TODO: REMOVE THIS VALUE, IT IS A TEST
-            $runtime.set_cell("3 + 5", CellAddressP.new(0,1), Add.new(IntP.new(3), IntP.new(5))) # TODO: REMOVE THIS VALUE, IT IS A TEST
+
             $lexer = Lexer.new
             $parser = Parser.new([])
             $serial = Serializer.new
@@ -51,6 +50,7 @@ module Interface
                 end
                 
                 # draw and refresh affected windows
+                
                 @form.f_refresh
                 @display.cd_refresh
                 @grid_w.cg_refresh
@@ -121,7 +121,7 @@ module Interface
                     $runtime.set_cell(text, addr, FloatP.new(val))
                 else
                     val = "\"#{text}\""
-                    $runtime.set_cell(text, addr, StringP.new(val))
+                    $runtime.set_cell(val, addr, StringP.new(val))
                 end
             else
                 text = text[1...]
@@ -211,6 +211,7 @@ module Interface
                     row_idx = @row_step + (row * @row_step)
                     col_idx = (@col_first + 1) + (col * @col_step)
                     @w.setpos(row_idx, col_idx)
+                    # Highlights currently selected row
                     if $grid_row == row && $grid_col == col
                         @w.attron(A_REVERSE)
                     end
@@ -221,6 +222,7 @@ module Interface
         end
     end
 
+    # Helper method for formula window
     def get_formula(row, col, max)
         s = ""
         addr = CellAddressP.new(row, col)
@@ -233,6 +235,7 @@ module Interface
         return truncate_s(s, max - 1).ljust((max - 1), ' ')
     end
 
+    # Helper method for printing a horizontal line, used in window templates
     def horizontal_line(window, row, start_column, end_column)
         (start_column...end_column).each do |column|
         window.setpos(row, column)
@@ -240,6 +243,7 @@ module Interface
         end
     end
 
+    # Helper method for printing a vertical line, used in window templates
     def vertical_line(window, column, start_row, end_row)
         (start_row...end_row).each do |row|
         window.setpos(row, column)
@@ -247,6 +251,7 @@ module Interface
         end
     end
 
+    # Helper method for getting the value of a grid cell. Evaluates the cell every time.
     def display_cell(row, col, max, verbose)
         s = ""
         addr = CellAddressP.new(row, col)
@@ -265,9 +270,13 @@ module Interface
             end
         else
             begin
-                s = (cell.most_recent_p.value).to_s
+                ast = lex_and_parse(cell.code)
+                prim = evaluate(ast)
+                s = "#{prim.value}"
             rescue NoMethodError
                 s = "Cannot be resolved to a primitive value"
+            rescue TypeError => error
+                s = verbose ? error.to_s : "ERROR"
             end
         end
         return truncate_s(s, max - 1).ljust((max - 1), ' ')
