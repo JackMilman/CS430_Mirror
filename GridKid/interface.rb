@@ -7,6 +7,8 @@ include Interp
 include Curses
 
 module Interface
+    # How do you choose between instance variables in Program or global
+    # variables?
     $grid_row = 0
     $grid_col = 0
     $grid_size = 10
@@ -15,6 +17,9 @@ module Interface
         def initialize
             $runtime = Runtime.new
 
+            # These are cheap to make. I'd recommend making them on the fly
+            # just when you need them. That way you don't have to worry about
+            # lingering state.
             $lexer = Lexer.new
             $parser = Parser.new([])
             $serial = Serializer.new
@@ -51,6 +56,8 @@ module Interface
                 
                 # draw and refresh affected windows
                 
+                # Why not just call all the methods refresh instead of
+                # prefixing them with redundant labels?
                 @form.f_refresh
                 @display.cd_refresh
                 @grid_w.cg_refresh
@@ -66,6 +73,7 @@ module Interface
             @height = height
             @width = width
             @id_w_len = @width / 8
+            # Won't 7/8 always be 0?
             @w_len = @width * (7 / 8)
             @id_w = Window.new(@height, @id_w_len, r_ind, c_ind)
             @w = Window.new(@height, @w_len, r_ind, @id_w_len)
@@ -87,6 +95,7 @@ module Interface
             @w.refresh
         end
 
+        # Clean separation of event loops.
         def form_loop
             text = ''
             loop do
@@ -125,6 +134,7 @@ module Interface
                 end
             else
                 text = text[1...]
+                # So much power here in so few lines.
                 begin
                     ast = lex_and_parse(text)
                     prim = evaluate(ast)
@@ -187,6 +197,8 @@ module Interface
             col_end = @col_first + ($grid_size * @col_step)
             # populates row-indices and horizontal-separators
             idx = 0
+            # Clean traversal. A range and each. You could avoid the
+            # conditional with two separate ranges/eaches.
             (1..@row_max).each do |row|
                 if row % 2 == 0
                     @w.setpos(row, 2)
@@ -228,6 +240,8 @@ module Interface
         addr = CellAddressP.new(row, col)
         val = $runtime.get_cell(addr).code
         if val == nil
+            # Favor blanks over a noisy screen of NILs. We could all use more
+            # peace.
             s = "NIL"
         else
             s = val
@@ -284,6 +298,8 @@ module Interface
 
     # Helper method for cutting down a string to a preferred size
     def truncate_s(s, max)
+        # Ruby on Rails has a nice helper for truncate. Alas, plain Ruby does
+        # not.
         s.length > max ? "#{s[0...max]}" : s
     end
 
@@ -297,3 +313,5 @@ module Interface
         expression.traverse($eval, $runtime)
     end
 end
+
+# Great implementation, Jack!
