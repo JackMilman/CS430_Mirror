@@ -26,21 +26,6 @@ module Interp
             @tokens = []
         end
 
-        # helper method for quickly resetting an individual lexer. Should
-        # remove the need to create a brand new one every time.
-        # This isn't really any different from the constructor call. If you're
-        # going to lexing a different expression, it's reasonable to create a
-        # distinct lexer and parser. The risk of forgetting to reset state as
-        # you maintain the lexer is high, and the performance cost of just
-        # making a new instance is low.
-        def reset(new_code="")
-            @code = new_code
-            @start_idx = 0
-            @idx = 0
-            @token_so_far = ""
-            @tokens = []
-        end
-
         def lex
             def in_bounds
                 @idx < @code.length
@@ -304,14 +289,6 @@ module Interp
             @handling_parenthetical = false
         end
 
-        def reset(tokens)
-            @tokens = tokens
-            @token_idx = 0
-            @handling_cell_ref = false
-            @handling_statistical = false
-            @handling_parenthetical = false
-        end
-
         def parse
             def in_bounds
                 @token_idx < @tokens.length
@@ -350,18 +327,17 @@ module Interp
                 # as needed.
                 left = relational
                 while has_logic
-                    # This variable is unused.
                     start_i = left.indices[0]
                     if has(:and)
                         advance
                         right = relational
                         end_i = right.indices[1]
-                        left = Ast::And.new(left, right)
+                        left = Ast::And.new(left, right, [start_i, end_i])
                     elsif has(:or)
                         advance
                         right = relational
                         end_i = right.indices[1]
-                        left = Ast::Or.new(left, right)
+                        left = Ast::Or.new(left, right, [start_i, end_i])
                     end
                 end
                 return left
@@ -483,35 +459,8 @@ module Interp
                 return left
             end
 
-            def unary
-                # This logic makes it so unary operations cannot chain.
-                # Right-associative operators are better parsed using recursion
-                # than loops. That recursion makes chaining very natural.
-                if has(:minus)
-                    start_i = @tokens[@token_idx].start_idx
-                    advance
-                    right = exponential
-                    end_i = right.indices[1]
-                    return Ast::Negate.new(right, [start_i, end_i])
-                elsif has(:bitwise_not)
-                    start_i = @tokens[@token_idx].start_idx
-                    advance
-                    right = exponential
-                    end_i = right.indices[1]
-                    return Ast::BitwiseNot.new(right, [start_i, end_i])
-                elsif has(:not)
-                    start_i = @tokens[@token_idx].start_idx
-                    advance
-                    right = exponential
-                    end_i = right.indices[1]
-                    return Ast::Not.new(right, [start_i, end_i])
-                else
-                    return exponential
-                end
-            end
-
             def exponential
-                left = atom
+                left = unary
                 if has(:exponentiate)
                     start_i = left.indices[0]
                     advance
@@ -520,6 +469,33 @@ module Interp
                     left = Ast::Exponent.new(left, right, [start_i, end_i])
                 end
                 return left
+            end
+
+            def unary
+                # This logic makes it so unary operations cannot chain.
+                # Right-associative operators are better parsed using recursion
+                # than loops. That recursion makes chaining very natural.
+                if has(:minus)
+                    start_i = @tokens[@token_idx].start_idx
+                    advance
+                    right = atom
+                    end_i = right.indices[1]
+                    return Ast::Negate.new(right, [start_i, end_i])
+                elsif has(:bitwise_not)
+                    start_i = @tokens[@token_idx].start_idx
+                    advance
+                    right = atom
+                    end_i = right.indices[1]
+                    return Ast::BitwiseNot.new(right, [start_i, end_i])
+                elsif has(:not)
+                    start_i = @tokens[@token_idx].start_idx
+                    advance
+                    right = atom
+                    end_i = right.indices[1]
+                    return Ast::Not.new(right, [start_i, end_i])
+                else
+                    return atom
+                end
             end
 
             def atom

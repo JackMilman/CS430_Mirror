@@ -31,16 +31,16 @@ multiplicative = multiplicative * unary
     | multiplicative % unary
     | unary
 
+# Good, this ordering of non-terminals makes exponentiation right-associative.
+exponential = unary ** exponential
+    | unary
+
 # This ordering means ~6 ** 2 will parse as ~(6 ** 2). Is that you intent? We
 # often omit whitespace around unary operators to indicate their extremely high
 # precedence.
-unary = - exponential
-    | ! exponential
-    | ~ exponential
-    | exponential
-
-# Good, this ordering of non-terminals makes exponentiation right-associative.
-exponential = atom ** exponential
+unary = - atom
+    | ! atom
+    | ~ atom
     | atom
 
 atom = INT
