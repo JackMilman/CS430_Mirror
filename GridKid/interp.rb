@@ -28,6 +28,11 @@ module Interp
 
         # helper method for quickly resetting an individual lexer. Should
         # remove the need to create a brand new one every time.
+        # This isn't really any different from the constructor call. If you're
+        # going to lexing a different expression, it's reasonable to create a
+        # distinct lexer and parser. The risk of forgetting to reset state as
+        # you maintain the lexer is high, and the performance cost of just
+        # making a new instance is low.
         def reset(new_code="")
             @code = new_code
             @start_idx = 0
@@ -48,6 +53,8 @@ module Interp
                     capture
                     i += 1
                 end
+                # Why do you need this first parameter? Isn't @token_so_far
+                # sufficient? Plus first isn't always first.
                 if first == 'F' && @token_so_far == "False"
                     emit_token(:boolean_literal)
                 elsif first == 'T' && @token_so_far == "True"
@@ -182,6 +189,8 @@ module Interp
                         capture
                         emit_token(:equals) # ==
                     else
+                        # Good. Don't treat bad with silence. We'll add support
+                        # for assignment in milestone 4.
                         raise TypeError, "Unknown symbol {#{@token_so_far + @code[@idx]}} at index: #{@start_idx}"
                     end
                 elsif has('<')
@@ -207,6 +216,10 @@ module Interp
                         emit_token(:greater_than) # >
                     end
                 elsif has('F')
+                    # Lexing special strings with deep logic is no fun.
+                    # Consider having a case that just matches any identifier.
+                    # After you've gobbled up the whole identifier with very
+                    # short code, check what the string is.
                     capture
                     lex_function('F', "alse") # False
                 elsif has('T')
@@ -239,6 +252,7 @@ module Interp
                     capture
                     while in_bounds
                         capture
+                        # Why not make this part of the loop condition?
                         if has('"')
                             break
                         end
@@ -282,6 +296,9 @@ module Interp
         def initialize(tokens)
             @tokens = tokens
             @token_idx = 0
+            # You shouldn't need flags to mark the current state of your parser.
+            # Each parsing method itself is a state that guides the parsing and
+            # asserts the expected syntax.
             @handling_cell_ref = false
             @handling_statistical = false
             @handling_parenthetical = false
@@ -312,6 +329,9 @@ module Interp
             # like "1 - 1, 0]", since expression() will usually exit once
             # it reaches an token not handled by the recursive level it's at.
             def wrapper
+                # The parse method should parse a single AST. If there are
+                # stray tokens left over, that's cause for an exception, not
+                # parsing another tree.
                 root = nil
                 while in_bounds
                     root = expression
@@ -324,8 +344,13 @@ module Interp
             end
 
             def logic
+                # This method demonstrates the recursive descent pattern for
+                # left-associative operators nicely: grab the left operand from
+                # the rung below, and loop through to collect up right operands
+                # as needed.
                 left = relational
                 while has_logic
+                    # This variable is unused.
                     start_i = left.indices[0]
                     if has(:and)
                         advance
@@ -459,6 +484,9 @@ module Interp
             end
 
             def unary
+                # This logic makes it so unary operations cannot chain.
+                # Right-associative operators are better parsed using recursion
+                # than loops. That recursion makes chaining very natural.
                 if has(:minus)
                     start_i = @tokens[@token_idx].start_idx
                     advance
@@ -521,6 +549,11 @@ module Interp
                     quark = handle_cell_address(start_i, true) # is an rvalue
                 elsif has(:left_bracket)
                     quark = handle_cell_address(start_i, false) # is not an rvalue
+                # These checks could all be bundled into a comprehensive error
+                # handler. You don't need the state variables. If you
+                # encounter any of these unexpected tokens when trying to
+                # parse an atom, raise an exception. They are not how any
+                # atoms start.
                 elsif has(:comma)
                     if !(@handling_cell_ref || @handling_statistical)
                         raise TypeError, "Unexpected comma at index: #{start_i}"
