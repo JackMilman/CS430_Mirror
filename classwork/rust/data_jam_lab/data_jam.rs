@@ -1,7 +1,7 @@
 use std::fs;
 use std::env;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Country {
     country: String,
     capital: String,
@@ -26,17 +26,22 @@ fn main() {
     let most_growth = data
                      .iter()
                      .max_by_key(|country| country.country_population_2021 - country.country_population_1960);
-    println!("{:?}", most_growth.expect("Some country has maximum"));
+    println!("Country with the most growth:");
+    println!("{:?}\n", most_growth.expect("Some country has maximum"));
     // India had the largest population growth.
 
     // How many countries had more than 50% population growth from 1960 to 2021?
     let more_than_50 = data
                  .iter()
-                 .filter(|country| country.country_population_1960 *2 > country.country_population_2021);
-    println!("{}", more_than_50.count());
+                 .filter(|country| country.country_population_1960 as f64 *1.5 < country.country_population_2021 as f64);
+    println!("Number of countries with more than 50% population growth from 1960 to 2021:");
+    println!("{}\n", more_than_50.count());
 
-    // Print the countries sorted by name of their capital city
-    
+    // Which country has the longest capital city name?
+    let longest_name = data
+                     .iter()
+                     .max_by_key(|country| country.capital.len());
+    println!("{:?}", longest_name.expect("Some country has the longest capital city name"));
 }
 
 fn parse_country(s: &str) -> Country {
