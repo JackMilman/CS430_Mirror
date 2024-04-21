@@ -16,10 +16,6 @@ module Interface
     class Program
         def initialize
             $runtime = Runtime.new
-
-            # These are cheap to make. I'd recommend making them on the fly
-            # just when you need them. That way you don't have to worry about
-            # lingering state.
             $lexer = Lexer.new
             $parser = Parser.new([])
             $serial = Serializer.new
@@ -242,7 +238,7 @@ module Interface
         if val == nil
             # Favor blanks over a noisy screen of NILs. We could all use more
             # peace.
-            s = "NIL"
+            s = "   "
         else
             s = val
         end
@@ -272,7 +268,7 @@ module Interface
         cell = $runtime.get_cell(addr)
         if cell.most_recent_p == nil
             if cell.code == nil
-                s = "NIL"
+                s = "   "
             else
                 begin
                     ast = lex_and_parse(cell.code)
@@ -304,8 +300,8 @@ module Interface
     end
 
     def lex_and_parse(source)
-        $lexer.reset(source)
-        $parser.reset($lexer.lex)
+        $lexer = Lexer.new(source)
+        $parser = Parser.new($lexer.lex)
         $parser.parse
     end
 
