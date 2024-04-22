@@ -326,6 +326,20 @@ module Ast
         end
     end
 
+    class Block
+        attr_reader :statements
+        attr_reader :indices
+
+        def initialize(statements, indices=nil)
+            @statements = statements
+            @indices = indices
+        end
+
+        def traverse(visitor, payload)
+            visitor.visit_block(self, payload)
+        end
+    end
+
     #-------------------------------------------------------------------------#
     #--------------------------------Serializer-------------------------------#
     #-------------------------------------------------------------------------#
@@ -506,6 +520,13 @@ module Ast
 
         def visit_sum(node, payload)
             visit_cell_func(node, "sum", payload)
+        end
+
+        #----------------------------------#
+        #       !!! BLOCK VISITOR !!!      #
+        #----------------------------------#
+        def visit_block(node, payload)
+            node.statements.collect { |statement| statement.traverse(self, payload) }
         end
         
     end

@@ -1,3 +1,7 @@
+require_relative './ast.rb'
+
+include Ast
+
 module Interp
 
     class Token
@@ -235,12 +239,8 @@ module Interp
                     lex_function('s', "um")
                 elsif has('"')
                     capture
-                    while in_bounds
+                    while in_bounds and !has('"')
                         capture
-                        # Why not make this part of the loop condition?
-                        if has('"')
-                            break
-                        end
                     end
                     if has('"')
                         capture
@@ -305,7 +305,7 @@ module Interp
             # This method seems to be necessary to deal with malformed code
             # like "1 - 1, 0]", since expression() will usually exit once
             # it reaches an token not handled by the recursive level it's at.
-            def wrapper
+            def block
                 # The parse method should parse a single AST. If there are
                 # stray tokens left over, that's cause for an exception, not
                 # parsing another tree.
@@ -332,12 +332,12 @@ module Interp
                         advance
                         right = relational
                         end_i = right.indices[1]
-                        left = Ast::And.new(left, right, [start_i, end_i])
+                        left = And.new(left, right, [start_i, end_i])
                     elsif has(:or)
                         advance
                         right = relational
                         end_i = right.indices[1]
-                        left = Ast::Or.new(left, right, [start_i, end_i])
+                        left = Or.new(left, right, [start_i, end_i])
                     end
                 end
                 return left
@@ -351,32 +351,32 @@ module Interp
                         advance
                         right = bitwise
                         end_i = right.indices[1]
-                        left = Ast::Equals.new(left, right, [start_i, end_i])
+                        left = Equals.new(left, right, [start_i, end_i])
                     elsif has(:not_equals)
                         advance
                         right = bitwise
                         end_i = right.indices[1]
-                        left = Ast::NotEquals.new(left, right, [start_i, end_i])
+                        left = NotEquals.new(left, right, [start_i, end_i])
                     elsif has(:less_than)
                         advance
                         right = bitwise
                         end_i = right.indices[1]
-                        left = Ast::LessThan.new(left, right, [start_i, end_i])
+                        left = LessThan.new(left, right, [start_i, end_i])
                     elsif has(:less_than_equal)
                         advance
                         right = bitwise
                         end_i = right.indices[1]
-                        left = Ast::LessThanEqualTo.new(left, right, [start_i, end_i])
+                        left = LessThanEqualTo.new(left, right, [start_i, end_i])
                     elsif has(:greater_than)
                         advance
                         right = bitwise
                         end_i = right.indices[1]
-                        left = Ast::GreaterThan.new(left, right, [start_i, end_i])
+                        left = GreaterThan.new(left, right, [start_i, end_i])
                     elsif has(:greater_than_equal)
                         advance
                         right = bitwise
                         end_i = right.indices[1]
-                        left = Ast::GreaterThanEqualTo.new(left, right, [start_i, end_i])
+                        left = GreaterThanEqualTo.new(left, right, [start_i, end_i])
                     end
                 end
                 return left
@@ -390,27 +390,27 @@ module Interp
                         advance
                         right = arithmetic
                         end_i = right.indices[1]
-                        left = Ast::BitwiseAnd.new(left, right, [start_i, end_i])
+                        left = BitwiseAnd.new(left, right, [start_i, end_i])
                     elsif has(:bitwise_or)
                         advance
                         right = arithmetic
                         end_i = right.indices[1]
-                        left = Ast::BitwiseOr.new(left, right, [start_i, end_i])
+                        left = BitwiseOr.new(left, right, [start_i, end_i])
                     elsif has(:bitwise_xor)
                         advance
                         right = arithmetic
                         end_i = right.indices[1]
-                        left = Ast::BitwiseXor.new(left, right, [start_i, end_i])
+                        left = BitwiseXor.new(left, right, [start_i, end_i])
                     elsif has(:bitwise_left_shift)
                         advance
                         right = arithmetic
                         end_i = right.indices[1]
-                        left = Ast::BitwiseLeftShift.new(left, right, [start_i, end_i])
+                        left = BitwiseLeftShift.new(left, right, [start_i, end_i])
                     elsif has(:bitwise_right_shift)
                         advance
                         right = arithmetic
                         end_i = right.indices[1]
-                        left = Ast::BitwiseRightShift.new(left, right, [start_i, end_i])
+                        left = BitwiseRightShift.new(left, right, [start_i, end_i])
                     end
                 end
                 return left
@@ -424,36 +424,36 @@ module Interp
                         advance
                         right = multiplicative
                         end_i = right.indices[1]
-                        left = Ast::Add.new(left, right, [start_i, end_i])
+                        left = Add.new(left, right, [start_i, end_i])
                     elsif has(:minus)
                         advance
                         right = multiplicative
                         end_i = right.indices[1]
-                        left = Ast::Subtract.new(left, right, [start_i, end_i])
+                        left = Subtract.new(left, right, [start_i, end_i])
                     end
                 end
                 return left
             end
 
             def multiplicative
-                left = unary
+                left = exponential
                 while has_multiplicative
                     start_i = left.indices[0]
                     if has(:multiply)
                         advance
-                        right = unary
+                        right = exponential
                         end_i = right.indices[1]
-                        left = Ast::Multiply.new(left, right, [start_i, end_i])
+                        left = Multiply.new(left, right, [start_i, end_i])
                     elsif has(:divide)
                         advance
-                        right = unary
+                        right = exponential
                         end_i = right.indices[1]
-                        left = Ast::Divide.new(left, right, [start_i, end_i])
+                        left = Divide.new(left, right, [start_i, end_i])
                     elsif has(:modulo)
                         advance
-                        right = unary
+                        right = exponential
                         end_i = right.indices[1]
-                        left = Ast::Modulo.new(left, right, [start_i, end_i])
+                        left = Modulo.new(left, right, [start_i, end_i])
                     end
                 end
                 return left
@@ -466,33 +466,30 @@ module Interp
                     advance
                     right = exponential
                     end_i = right.indices[1]
-                    left = Ast::Exponent.new(left, right, [start_i, end_i])
+                    left = Exponent.new(left, right, [start_i, end_i])
                 end
                 return left
             end
 
             def unary
-                # This logic makes it so unary operations cannot chain.
-                # Right-associative operators are better parsed using recursion
-                # than loops. That recursion makes chaining very natural.
                 if has(:minus)
                     start_i = @tokens[@token_idx].start_idx
                     advance
-                    right = atom
+                    right = unary
                     end_i = right.indices[1]
-                    return Ast::Negate.new(right, [start_i, end_i])
+                    return Negate.new(right, [start_i, end_i])
                 elsif has(:bitwise_not)
                     start_i = @tokens[@token_idx].start_idx
                     advance
-                    right = atom
+                    right = unary
                     end_i = right.indices[1]
-                    return Ast::BitwiseNot.new(right, [start_i, end_i])
+                    return BitwiseNot.new(right, [start_i, end_i])
                 elsif has(:not)
                     start_i = @tokens[@token_idx].start_idx
                     advance
-                    right = atom
+                    right = unary
                     end_i = right.indices[1]
-                    return Ast::Not.new(right, [start_i, end_i])
+                    return Not.new(right, [start_i, end_i])
                 else
                     return atom
                 end
@@ -503,20 +500,20 @@ module Interp
                 start_i = quark.start_idx
                 if has(:integer_literal)
                     end_i = quark.end_idx
-                    quark = Ast::IntP.new(quark.source.to_i, [start_i, end_i])
+                    quark = IntP.new(quark.source.to_i, [start_i, end_i])
                     advance
                 elsif has(:float_literal)
                     end_i = quark.end_idx
-                    quark = Ast::FloatP.new(quark.source.to_f, [start_i, end_i])
+                    quark = FloatP.new(quark.source.to_f, [start_i, end_i])
                     advance
                 elsif has(:boolean_literal)
                     end_i = quark.end_idx
-                    quark = Ast::BooleanP.new(quark.source == "True", [start_i, end_i])
+                    quark = BooleanP.new(quark.source == "True", [start_i, end_i])
                     advance
                 elsif has(:string_literal)
                     end_i = quark.end_idx
                     value = quark.source[1...quark.source.length - 1] # removes the "" marks
-                    quark = Ast::StringP.new(value, [start_i, end_i])
+                    quark = StringP.new(value, [start_i, end_i])
                     advance
                 elsif has(:left_parenthesis)
                     quark = handle_parenthetical
@@ -558,12 +555,12 @@ module Interp
                     # parenthesis cleanly.       |
                     #                            V
                     end_i = @tokens[@token_idx - 1].start_idx
-                    quark = Ast::CastIntToFloat.new(value, [start_i, end_i])
+                    quark = CastIntToFloat.new(value, [start_i, end_i])
                 elsif has(:int_cast)
                     advance
                     value = handle_parenthetical
                     end_i = @tokens[@token_idx - 1].start_idx
-                    quark = Ast::CastFloatToInt.new(value, [start_i, end_i])
+                    quark = CastFloatToInt.new(value, [start_i, end_i])
                 else
                     raise TypeError, "Unknown token at index: #{quark.start_idx}, #{quark.end_idx}"
                 end
@@ -571,7 +568,7 @@ module Interp
                 return quark
             end
 
-            return wrapper
+            return block
         end
 
         #----------------------------------#
@@ -618,9 +615,9 @@ module Interp
                     end_i = @tokens[@token_idx].end_idx
                     advance
                     if r_val
-                        result = Ast::CellRValue.new(left, right, [start_i, end_i])
+                        result = CellRValue.new(left, right, [start_i, end_i])
                     else
-                        result = Ast::CellLValue.new(left, right, [start_i, end_i])
+                        result = CellLValue.new(left, right, [start_i, end_i])
                     end
                 else
                     raise TypeError, "Expected Comma for Cell Reference at index: #{left.indices[1]}"
@@ -660,13 +657,13 @@ module Interp
                     end_i = @tokens[@token_idx].end_idx
                     advance
                     if type == :max_func
-                        result = Ast::Max.new(left, right, [start_i, end_i])
+                        result = Max.new(left, right, [start_i, end_i])
                     elsif type == :min_func
-                        result = Ast::Min.new(left, right, [start_i, end_i])
+                        result = Min.new(left, right, [start_i, end_i])
                     elsif type == :mean_func
-                        result = Ast::Mean.new(left, right, [start_i, end_i])
+                        result = Mean.new(left, right, [start_i, end_i])
                     elsif type == :sum_func
-                        result = Ast::Sum.new(left, right, [start_i, end_i])
+                        result = Sum.new(left, right, [start_i, end_i])
                     end
                 else
                     raise TypeError, "Expected Comma for Statistical Function at index: #{left.indices[1]}"
