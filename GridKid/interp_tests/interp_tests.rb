@@ -41,7 +41,7 @@ include Interp
 # toks.each{|tok| puts tok.inspect}
 
 # puts
-# tester = Lexer.new("5 False")
+# tester = Lexer.new("False")
 # toks = tester.lex
 # toks.each{|tok| puts tok.inspect}
 
@@ -105,10 +105,10 @@ include Interp
 # toks = tester.lex
 # toks.each{|tok| puts tok.inspect}
 
-# puts
-# tester = Lexer.new("max([0, 0], [2, 1])")
-# toks = tester.lex
-# toks.each{|tok| puts tok.inspect}
+puts
+tester = Lexer.new("max([0, 0], [2, 1])")
+toks = tester.lex
+toks.each{|tok| puts tok.inspect}
 
 # puts
 # tester = Lexer.new("max([0, 0] [2, 1])") # expected fail comma
@@ -131,6 +131,11 @@ include Interp
 # toks.each{|tok| puts tok.inspect}
 
 # puts
+# tester = Lexer.new("5 * (3 ** 2)")
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
+
+# puts
 # tester = Lexer.new("float(10) / 4.0")
 # toks = tester.lex
 # toks.each{|tok| puts tok.inspect}
@@ -145,17 +150,25 @@ include Interp
 # toks = tester.lex
 # toks.each{|tok| puts tok.inspect}
 
-puts
-tester = Lexer.new("-6 ** 2")
-toks = tester.lex
-toks.each{|tok| puts tok.inspect}
+# puts
+# tester = Lexer.new("10.0 + , 5.0") # expected failure due to unrelated comma
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
+
+# puts
+# tester = Lexer.new("-6 ** 2")
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
 
 puts
+puts "SOURCE:"
+toks.each{|tok| print tok.source + " "}
+print "\n"
 puts "TREE:"
 parser = Parser.new(toks)
 expr = parser.parse
 puts expr.inspect
-puts
-puts "RESULTS:"
-eval = Evaluator.new
-puts expr.traverse(eval, nil).value
+# puts
+# puts "RESULTS:"
+# eval = Evaluator.new
+# puts expr.traverse(eval, nil).value

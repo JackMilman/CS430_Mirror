@@ -204,39 +204,6 @@ module Interp
                     else
                         emit_token(:greater_than) # >
                     end
-                elsif has('F')
-                    # Lexing special strings with deep logic is no fun.
-                    # Consider having a case that just matches any identifier.
-                    # After you've gobbled up the whole identifier with very
-                    # short code, check what the string is.
-                    capture
-                    lex_function('F', "alse") # False
-                elsif has('T')
-                    capture
-                    lex_function('T', "rue") # True
-                elsif has('f')
-                    capture
-                    lex_function('f', "loat") # float
-                elsif has('i')
-                    capture
-                    lex_function('i', "nt") # int
-                elsif has('m')
-                    capture
-                    if has('a')
-                        capture
-                        lex_function('a', "x") # max
-                    elsif has('i')
-                        capture
-                        lex_function('i', "n") # min
-                    elsif has('e')
-                        capture
-                        lex_function('e', "an") # mean
-                    else
-                        raise TypeError, "Unknown function {#{@token_so_far}#{@code[@idx]}} at index: #{@start_idx}"
-                    end
-                elsif has('s')
-                    capture
-                    lex_function('s', "um")
                 elsif has('"')
                     capture
                     while in_bounds and !has('"')
@@ -267,7 +234,26 @@ module Interp
                     capture
                     emit_token(:right_parenthesis) # )
                 else
-                    raise TypeError, "Unknown token (#{@code[@idx]}) at index: #{@idx}"
+                    while has_letter
+                        capture
+                    end
+                    if @token_so_far == "False" || @token_so_far == "True"
+                        emit_token(:boolean_literal)
+                    elsif @token_so_far == "float"
+                        emit_token(:float_cast)
+                    elsif @token_so_far == "int"
+                        emit_token(:int_cast)
+                    elsif @token_so_far == "max"
+                        emit_token(:max_func)
+                    elsif @token_so_far == "min"
+                        emit_token(:min_func)
+                    elsif @token_so_far == "mean"
+                        emit_token(:mean_func)
+                    elsif @token_so_far == "sum"
+                        emit_token(:sum_func)
+                    else
+                        raise TypeError, "Unknown token (#{@code[@idx]}) at index: #{@idx}"
+                    end
                 end
             end
 
@@ -281,12 +267,6 @@ module Interp
         def initialize(tokens)
             @tokens = tokens
             @token_idx = 0
-            # You shouldn't need flags to mark the current state of your parser.
-            # Each parsing method itself is a state that guides the parsing and
-            # asserts the expected syntax.
-            @handling_cell_ref = false
-            @handling_statistical = false
-            @handling_parenthetical = false
         end
 
         def parse
@@ -522,23 +502,12 @@ module Interp
                     quark = handle_cell_address(start_i, true) # is an rvalue
                 elsif has(:left_bracket)
                     quark = handle_cell_address(start_i, false) # is not an rvalue
-                # These checks could all be bundled into a comprehensive error
-                # handler. You don't need the state variables. If you
-                # encounter any of these unexpected tokens when trying to
-                # parse an atom, raise an exception. They are not how any
-                # atoms start.
                 elsif has(:comma)
-                    if !(@handling_cell_ref || @handling_statistical)
-                        raise TypeError, "Unexpected comma at index: #{start_i}"
-                    end
+                    raise TypeError, "Unexpected comma at index: #{start_i}"
                 elsif has(:right_bracket)
-                    if !(@handling_cell_ref || @handling_statistical)
-                        raise TypeError, "Unexpected right Bracket at index: #{start_i}"
-                    end
+                    raise TypeError, "Unexpected right Bracket at index: #{start_i}"
                 elsif has(:right_parenthesis)
-                    if !(@handling_parenthetical)
-                        raise TypeError, "Unexpected right Parenthesis at index: #{start_i}"
-                    end
+                    raise TypeError, "Unexpected right Parenthesis at index: #{start_i}"
                 elsif has(:max_func)
                     quark = handle_statistical(start_i, :max_func)
                 elsif has(:min_func)
@@ -602,7 +571,6 @@ module Interp
         #----------------------------------#
         def handle_cell_address(start_i, r_val)
             result = nil
-            @handling_cell_ref = true
             if has(:left_bracket)
                 advance
                 left = expression
@@ -625,25 +593,21 @@ module Interp
             else
                 raise TypeError, "Expected opening Bracket for Cell Reference at index: #{start_i}"
             end
-            @handling_cell_ref = false
             return result
         end
 
         def handle_parenthetical
-            @handling_parenthetical = true
             advance
             quark = expression 
             if !has(:right_parenthesis)
                 raise TypeError, "Expected closing Parentheses at index: #{quark.indices[1]}"
             end
             advance
-            @handling_parenthetical = false
             return quark
         end
 
         def handle_statistical(start_i, type)
             result = nil
-            @handling_statistical = true
             advance
             if has(:left_parenthesis)
                 advance
@@ -671,7 +635,6 @@ module Interp
             else
                 raise TypeError, "Expected opening Parenthesis for Statistical Function at index: #{start_i}"
             end
-            @handling_statistical = false
             return result
         end
     end
