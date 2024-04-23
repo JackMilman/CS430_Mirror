@@ -35,36 +35,6 @@ module Interp
                 @idx < @code.length
             end
 
-            def lex_function(first, rest)
-                # the rest of the expected function can be captured, or else a TypeError is raised
-                i = 0
-                while has(rest[i]) && i < rest.length
-                    capture
-                    i += 1
-                end
-                # Why do you need this first parameter? Isn't @token_so_far
-                # sufficient? Plus first isn't always first.
-                if first == 'F' && @token_so_far == "False"
-                    emit_token(:boolean_literal)
-                elsif first == 'T' && @token_so_far == "True"
-                    emit_token(:boolean_literal)
-                elsif first == 'f' && @token_so_far == "float"
-                    emit_token(:float_cast)
-                elsif first == 'i' && @token_so_far == "int"
-                    emit_token(:int_cast)
-                elsif first == 'a' && @token_so_far == "max"
-                    emit_token(:max_func)
-                elsif first == 'i' && @token_so_far == "min"
-                    emit_token(:min_func)
-                elsif first == 'e' && @token_so_far == "mean"
-                    emit_token(:mean_func)
-                elsif first == 's' && @token_so_far == "sum"
-                    emit_token(:sum_func)
-                else
-                    raise TypeError, "Unknown function {#{@token_so_far}#{@code[@idx]}} at index: #{@start_idx}"
-                end
-            end
-
             def has_digit
                 # current character is a number value within 0-9
                 in_bounds && @code[@idx].match?(/[0-9]/)
