@@ -36,12 +36,12 @@ include Interp
 # toks.each{|tok| puts tok.inspect}
 
 # puts
-# tester = Lexer.new("2 ** 4 ** 2") # TODO: should be giving 65,536
+# tester = Lexer.new("2 ** 4 ** 2") # expected 65,536
 # toks = tester.lex
 # toks.each{|tok| puts tok.inspect}
 
 # puts
-# tester = Lexer.new("False")
+# tester = Lexer.new("5 False") # expect exception for an invalid expression
 # toks = tester.lex
 # toks.each{|tok| puts tok.inspect}
 
@@ -105,10 +105,10 @@ include Interp
 # toks = tester.lex
 # toks.each{|tok| puts tok.inspect}
 
-puts
-tester = Lexer.new("max([0, 0], [2, 1])")
-toks = tester.lex
-toks.each{|tok| puts tok.inspect}
+# puts
+# tester = Lexer.new("max([0, 0], [2, 1])")
+# toks = tester.lex
+# toks.each{|tok| puts tok.inspect}
 
 # puts
 # tester = Lexer.new("max([0, 0] [2, 1])") # expected fail comma

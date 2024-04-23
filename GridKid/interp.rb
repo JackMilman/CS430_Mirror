@@ -222,7 +222,7 @@ module Interp
                     elsif @token_so_far == "sum"
                         emit_token(:sum_func)
                     else
-                        raise TypeError, "Unknown token (#{@code[@idx]}) at index: #{@idx}"
+                        raise TypeError, "Unknown token (#{@token_so_far}) at index: #{@start_idx}"
                     end
                 end
             end
@@ -252,18 +252,12 @@ module Interp
                 @token_idx += 1
             end
 
-            # This method seems to be necessary to deal with malformed code
-            # like "1 - 1, 0]", since expression() will usually exit once
-            # it reaches an token not handled by the recursive level it's at.
             def block
-                # The parse method should parse a single AST. If there are
-                # stray tokens left over, that's cause for an exception, not
-                # parsing another tree.
-                root = nil
-                while in_bounds
-                    root = expression
+                root = expression
+                if in_bounds
+                    raise TypeError, "Invalid expression"
                 end
-                return root
+                root
             end
 
             def expression
@@ -507,7 +501,11 @@ module Interp
                 return quark
             end
 
-            return block
+            root = block
+            if in_bounds
+                raise TypeError, "Invalid expression"
+            end
+            return root
         end
 
         #----------------------------------#

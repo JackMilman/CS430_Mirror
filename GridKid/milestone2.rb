@@ -7,7 +7,8 @@ include Interp
 
 eval = Evaluator.new
 ser = Serializer.new
-runt = Runtime.new(3)
+grid = Grid.new(3)
+runt = Runtime.new(grid)
 lexer = Lexer.new
 parser = Parser.new([])
 

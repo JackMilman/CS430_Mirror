@@ -15,7 +15,8 @@ module Interface
 
     class Program
         def initialize
-            $runtime = Runtime.new
+            $grid = Grid.new($grid_size)
+            # $runtime = Runtime.new($grid)
             $lexer = Lexer.new
             $parser = Parser.new([])
             $serial = Serializer.new
@@ -60,7 +61,6 @@ module Interface
                 @main_window.setpos(0, 0)
             end
         end
-    
     end
 
     class FormulaEditor
@@ -114,19 +114,20 @@ module Interface
 
         def save_cell(text)
             addr = CellAddressP.new($grid_row, $grid_col)
+            run = Runtime.new($grid)
             if text[0] != '='
                 if text == "True" || text == "False"
                     val = text.downcase == "true"
-                    $runtime.set_cell(text, addr, BooleanP.new(val))
+                    run.set_cell(text, addr, BooleanP.new(val))
                 elsif text =~ /^[-+]?[0-9]*$/
                     val = text.to_i
-                    $runtime.set_cell(text, addr, IntP.new(val))
+                    run.set_cell(text, addr, IntP.new(val))
                 elsif text=~ /^[-+]?[0-9]*\.?[0-9]+$/
                     val = text.to_f
-                    $runtime.set_cell(text, addr, FloatP.new(val))
+                    run.set_cell(text, addr, FloatP.new(val))
                 else
                     val = "\"#{text}\""
-                    $runtime.set_cell(val, addr, StringP.new(val))
+                    run.set_cell(val, addr, StringP.new(val))
                 end
             else
                 text = text[1...]
@@ -134,9 +135,9 @@ module Interface
                 begin
                     ast = lex_and_parse(text)
                     prim = evaluate(ast)
-                    $runtime.set_cell(text, addr, prim)
+                    run.set_cell(text, addr, prim)
                 rescue TypeError
-                    $runtime.set_cell(text, addr, nil)
+                    run.set_cell(text, addr, nil)
                 end
             end
         end
@@ -234,10 +235,9 @@ module Interface
     def get_formula(row, col, max)
         s = ""
         addr = CellAddressP.new(row, col)
-        val = $runtime.get_cell(addr).code
+        run = Runtime.new($grid)
+        val = run.get_cell(addr).code
         if val == nil
-            # Favor blanks over a noisy screen of NILs. We could all use more
-            # peace.
             s = "   "
         else
             s = val
@@ -265,7 +265,8 @@ module Interface
     def display_cell(row, col, max, verbose)
         s = ""
         addr = CellAddressP.new(row, col)
-        cell = $runtime.get_cell(addr)
+        run = Runtime.new($grid)
+        cell = run.get_cell(addr)
         if cell.most_recent_p == nil
             if cell.code == nil
                 s = "   "
@@ -306,7 +307,7 @@ module Interface
     end
 
     def evaluate(expression)
-        expression.traverse($eval, $runtime)
+        expression.traverse($eval, Runtime.new($grid))
     end
 end
 

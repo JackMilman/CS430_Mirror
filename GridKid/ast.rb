@@ -340,6 +340,21 @@ module Ast
         end
     end
 
+    class Assignment
+        attr_reader :ident_lval
+        attr_reader :expression
+
+        def initialize(ident_lval, expression, indices=nil)
+            @ident_lval = ident_lval
+            @expression = expression
+            @indices = indices
+        end
+
+        def traverse(visitor, payload)
+            visitor.visit_assignment(self, payload)
+        end
+    end
+
     #-------------------------------------------------------------------------#
     #--------------------------------Serializer-------------------------------#
     #-------------------------------------------------------------------------#
@@ -829,6 +844,7 @@ module Ast
         def visit_cell_r_value(node, payload)
             results = validate_cell(node, payload)
             address = CellAddressP.new(results[0].value, results[1].value)
+            
             return payload.get_cell(address).most_recent_p
         end
 
@@ -974,11 +990,11 @@ module Ast
     class Runtime
         attr_accessor :grid
 
-        def initialize(size=10)
-            @grid = Grid.new(size)
+        def initialize(grid)
+            @grid = grid
         end
 
-        def set_cell(source, address, a_s_t)
+        def set_cell(source="", address, a_s_t)
             @grid.set_cell(source, address, a_s_t, self)
         end
 
