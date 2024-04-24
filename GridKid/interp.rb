@@ -150,7 +150,8 @@ module Interp
                     else
                         # Good. Don't treat bad with silence. We'll add support
                         # for assignment in milestone 4.
-                        raise TypeError, "Unknown symbol {#{@token_so_far + @code[@idx]}} at index: #{@start_idx}"
+                        # raise TypeError, "Unknown symbol {#{@token_so_far + @code[@idx]}} at index: #{@start_idx}"
+                        emit_token(:assignment) # =
                     end
                 elsif has('<')
                     capture
@@ -203,6 +204,15 @@ module Interp
                 elsif has(')')
                     capture
                     emit_token(:right_parenthesis) # )
+                elsif has('{')
+                    capture
+                    emit_token(:left_brace) # {
+                elsif has('}')
+                    capture
+                    emit_token(:right_brace) # }
+                elsif has("\n")
+                    capture
+                    emit_token(:linebreak) # \n
                 else
                     while has_letter
                         capture
@@ -222,7 +232,8 @@ module Interp
                     elsif @token_so_far == "sum"
                         emit_token(:sum_func)
                     else
-                        raise TypeError, "Unknown token (#{@token_so_far}) at index: #{@start_idx}"
+                        # raise TypeError, "Unknown token (#{@token_so_far}) at index: #{@start_idx}"
+                        emit_token(:identifier)
                     end
                 end
             end
@@ -253,11 +264,25 @@ module Interp
             end
 
             def block
-                root = expression
-                if in_bounds
-                    raise TypeError, "Invalid expression"
+                if has(:left_brace)
+                    start_i = @tokens[@token_idx].start_idx
+                    advance
+                    if has(:linebreak)
+                        advance
+                    end
+                    statements = []
+                    while in_bounds && !has(:right_brace)
+                        statements.append(expression)
+                    end
+                    if !has(:right_brace)
+                        raise TypeError, "Expected closing brace"
+                    end
+                    advance
+                    end_i = @tokens[@token_idx - 1].start_idx
+                    return Block.new(statements, [start_i, end_i])
+                else
+                    return expression
                 end
-                root
             end
 
             def expression
@@ -494,8 +519,12 @@ module Interp
                     value = handle_parenthetical
                     end_i = @tokens[@token_idx - 1].start_idx
                     quark = CastFloatToInt.new(value, [start_i, end_i])
+                elsif has(:identifier)
+                    quark = handle_identifier(start_i, quark)
+                elsif has(:linebreak)
+                    raise TypeError, "Unexpected linebreak at index :#{start_i}"
                 else
-                    raise TypeError, "Unknown token at index: #{quark.start_idx}, #{quark.end_idx}"
+                    raise TypeError, "Unknown token ( #{quark.source} ) at index: #{quark.start_idx}, #{quark.end_idx}"
                 end
 
                 return quark
@@ -604,6 +633,24 @@ module Interp
                 raise TypeError, "Expected opening Parenthesis for Statistical Function at index: #{start_i}"
             end
             return result
+        end
+
+        def handle_identifier(start_i, ident)
+            result = nil
+            advance
+            if !has(:assignment)
+                end_i = ident.end_idx
+                return VariableRef.new(ident.source, [start_i, end_i])
+            else 
+                advance
+                expr = expression
+                if not has(:linebreak)
+                    raise TypeError, "Expected linebreak for assignment after index: #{expr.indices[1]}. Assignments cannot be the last statement in a block."
+                end
+                end_i = @tokens[@token_idx].end_idx
+                advance
+                return Assignment.new(ident.source, expr, [start_i, end_i])
+            end
         end
     end
 end

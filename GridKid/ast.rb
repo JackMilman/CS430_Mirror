@@ -341,17 +341,32 @@ module Ast
     end
 
     class Assignment
-        attr_reader :ident_lval
+        attr_reader :var_ident
         attr_reader :expression
+        attr_reader :indices
 
-        def initialize(ident_lval, expression, indices=nil)
-            @ident_lval = ident_lval
+        def initialize(var_ident, expression, indices=nil)
+            @var_ident = var_ident
             @expression = expression
             @indices = indices
         end
 
         def traverse(visitor, payload)
             visitor.visit_assignment(self, payload)
+        end
+    end
+
+    class VariableRef
+        attr_reader :var_ident
+        attr_reader :indices
+
+        def initialize(var_ident, indices=nil)
+            @var_ident = var_ident
+            @indices = indices
+        end
+
+        def traverse(visitor, payload)
+            visitor.visit_variable_ref(self, payload)
         end
     end
 
@@ -538,12 +553,20 @@ module Ast
         end
 
         #----------------------------------#
-        #       !!! BLOCK VISITOR !!!      #
+        #     !!! VARIABLE VISITORS !!!    #
         #----------------------------------#
         def visit_block(node, payload)
-            node.statements.collect { |statement| statement.traverse(self, payload) }
+            block = node.statements.collect { |statement| statement.traverse(self, payload) }
+            return block.join("\n")
+        end
+
+        def visit_assignment(node, payload)
+            return "#{node.var_ident} = #{node.expression.traverse(self, payload)}"
         end
         
+        def visit_variable_ref(node, payload)
+            return "#{node.var_ident}"
+        end
     end
     #-------------------------------------------------------------------------#
     #--------------------------------Evaluator--------------------------------#
@@ -918,6 +941,34 @@ module Ast
         def visit_sum(node, payload)
             return statistical_traverse(node, payload, :sum)
         end
+
+        #----------------------------------#
+        #    !!! VARIABLE VISITORS !!!     #
+        #----------------------------------#
+        def visit_block(node, payload)
+            node.statements.each { |statement| statement.traverse(self, payload)}
+            return node.statements.last.traverse(self, payload)
+        end
+
+        def visit_assignment(node, payload)
+            prim_val = node.expression.traverse(self, payload)
+            good = prim_val.is_a?(NumberP) || prim_val.is_a?(BooleanP) || prim_val.is_a?(StringP) || prim_val.is_a?(CellAddressP)
+            if !good
+                raise TypeError, "Unable to evaluate expression"
+            else
+                payload.assign_var(node.var_ident, prim_val)
+            end
+            return nil
+        end
+
+        def visit_variable_ref(node, payload)
+            prim_val = payload.get_var(node.var_ident)
+            if prim_val == nil
+                raise TypeError, "#{node.var_ident} is an uninitialized value"
+            else 
+                return prim_val
+            end
+        end
     end
 
     #-------------------------------------------------------------------------#
@@ -976,7 +1027,7 @@ module Ast
                     if val.most_recent_p != nil
                         print "#{val.most_recent_p.value} |"
                     else
-                        print val
+                        print "___ | "
                     end
                 end
                 puts
@@ -992,6 +1043,7 @@ module Ast
 
         def initialize(grid)
             @grid = grid
+            @var_dictionary = {}
         end
 
         def set_cell(source="", address, a_s_t)
@@ -1000,6 +1052,14 @@ module Ast
 
         def get_cell(address)
             return @grid.get_cell(address)
+        end
+
+        def assign_var(var_ident, primitive)
+            @var_dictionary[var_ident] = primitive
+        end
+
+        def get_var(var_ident)
+            return @var_dictionary[var_ident]
         end
 
         def dump_state

@@ -16,19 +16,16 @@ module Interface
     class Program
         def initialize
             $grid = Grid.new($grid_size)
-            # $runtime = Runtime.new($grid)
-            $lexer = Lexer.new
-            $parser = Parser.new([])
-            $serial = Serializer.new
-            $eval = Evaluator.new
 
             @height = Curses.lines
             @width = Curses.cols
             @main_window = Window.new(@height, @width, 0, 0)
             @main_window.keypad(true)
-            @form = FormulaEditor.new(2, @width, 0, 0)
-            @display = CellDisplay.new(2, @width, 2, 0)
-            @grid_w = CellGrid.new(@height - 4, @width, 4, 0)
+            form_size = 8
+            display_size = 2
+            @form = FormulaEditor.new(form_size, @width, 0, 0, form_size)
+            @display = CellDisplay.new(display_size, @width, form_size, 0, display_size)
+            @grid_w = CellGrid.new(@height - (form_size + display_size), @width, form_size + display_size, 0)
         end
     
         def main_loop
@@ -48,6 +45,8 @@ module Interface
                 elsif char == Key::DOWN
                     $grid_row = $grid_row < $grid_size - 1 ? $grid_row + 1 : $grid_row
                 elsif char == 'E'
+                    # @main_window.clear
+                    # @main_window.refresh
                     @form.form_loop
                 end
                 
@@ -65,27 +64,31 @@ module Interface
 
     class FormulaEditor
 
-        def initialize(height, width, r_ind, c_ind)
+        def initialize(height, width, r_ind, c_ind, form_size)
             @height = height
             @width = width
+            @form_size = form_size
             @id_w_len = @width / 8
-            # Won't 7/8 always be 0?
-            @w_len = @width * (7 / 8)
+            @w_len = @width - @id_w_len
             @id_w = Window.new(@height, @id_w_len, r_ind, c_ind)
             @w = Window.new(@height, @w_len, r_ind, @id_w_len)
         end
 
         def f_refresh
-            @id_w.setpos(0, 0)
+            @id_w.clear
+            @w.clear
+            @id_w.setpos((@form_size - 1) / 2, 0)
             @id_w.addstr("Formula [#{$grid_row}, #{$grid_col}]")
-            @id_w.setpos(0, @id_w_len - 1)
-            @id_w.addstr("\u2502")
+            (0..@form_size).each do |row|
+                @id_w.setpos(row, @id_w_len - 1)
+                @id_w.addstr("\u2502")
+            end
 
             @w.setpos(0, 2)
             @w.addstr(get_formula($grid_row, $grid_col, @width))
 
-            horizontal_line(@id_w, 1, 0, @id_w_len)
-            horizontal_line(@w, 1, 0, @width)
+            horizontal_line(@id_w, @form_size - 1, 0, @id_w_len)
+            horizontal_line(@w, @form_size - 1, 0, @width)
 
             @id_w.refresh
             @w.refresh
@@ -96,6 +99,7 @@ module Interface
             text = ''
             loop do
                 @w.clear
+                @w.refresh
                 @w.setpos(0, 2)
                 @w.addstr(text)
                 char = @w.getch
@@ -104,6 +108,8 @@ module Interface
                 elsif char == '@' # save/write character
                     save_cell(text)
                     break
+                elsif char == 10 # enter key
+                    text += "\n"
                 elsif char == 127 # Backspace
                     text.chop!
                 else
@@ -145,11 +151,12 @@ module Interface
 
     class CellDisplay
 
-        def initialize(height, width, r_ind, c_ind)
+        def initialize(height, width, r_ind, c_ind, display_size)
             @height = height
             @width = width
+            @display_size = display_size
             @id_w_len = @width / 8
-            @w_len = @width * (7 / 8)
+            @w_len = @width - @id_w_len
             @id_w = Window.new(@height, @id_w_len, r_ind, c_ind)
             @w = Window.new(@height, @w_len, r_ind, @id_w_len)
         end
@@ -301,13 +308,13 @@ module Interface
     end
 
     def lex_and_parse(source)
-        $lexer = Lexer.new(source)
-        $parser = Parser.new($lexer.lex)
-        $parser.parse
+        lexer = Lexer.new(source)
+        parser = Parser.new(lexer.lex)
+        parser.parse
     end
 
     def evaluate(expression)
-        expression.traverse($eval, Runtime.new($grid))
+        expression.traverse(Evaluator.new, Runtime.new($grid))
     end
 end
 

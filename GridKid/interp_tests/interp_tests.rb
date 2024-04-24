@@ -161,6 +161,11 @@ include Interp
 # toks.each{|tok| puts tok.inspect}
 
 puts
+tester = Lexer.new("{var = 12\nabcd = 8\nvar + abcd}")
+toks = tester.lex
+toks.each{|tok| puts tok.inspect}
+
+puts
 puts "SOURCE:"
 toks.each{|tok| print tok.source + " "}
 print "\n"
