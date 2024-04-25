@@ -4,9 +4,9 @@ GridKid: The CS430 Semester-long project. Currently on Milestone [{4}]
   - Finished with Parser and Lexer's structure.
   - Finished final testing of Parser and Lexer.
   - Submitted Milestone 2 on March 24.
-  - Structure largely complete for Interface. Evaluation in progress, mostly complete.
+  - Structure complete for Interface. Evaluation complete.
   - Submitted Milestone 3 on April 14.
-  - Working on implementing the abstractions for Blocks and Variables.
+  - Finished with implementing the basic structure of Blocks and flow-control functionality.
 
 lab2_scoping: A lab exploring the effects of scoping in ruby programs.
 
