@@ -370,6 +370,24 @@ module Ast
         end
     end
 
+    class Conditional
+        attr_reader :predicate
+        attr_reader :then_block
+        attr_reader :else_block
+        attr_reader :indices
+
+        def initialize(predicate, then_block, else_block, indices=nil)
+            @predicate = predicate
+            @then_block = then_block
+            @else_block = else_block
+            @indices = indices
+        end
+
+        def traverse(visitor, payload)
+            visitor.visit_conditional(self, payload)
+        end
+    end
+
     #-------------------------------------------------------------------------#
     #--------------------------------Serializer-------------------------------#
     #-------------------------------------------------------------------------#
@@ -557,7 +575,8 @@ module Ast
         #----------------------------------#
         def visit_block(node, payload)
             block = node.statements.collect { |statement| statement.traverse(self, payload) }
-            return block.join("\n")
+            block.map!{|statement| "  " ++ statement}
+            return "{\n#{block.join("\n")}\n}"
         end
 
         def visit_assignment(node, payload)
@@ -566,6 +585,13 @@ module Ast
         
         def visit_variable_ref(node, payload)
             return "#{node.var_ident}"
+        end
+
+        def visit_conditional(node, payload)
+            pred = "if #{node.predicate.traverse(self, payload)}"
+            then_b = "\n  #{node.then_block.traverse(self, payload)}\n"
+            else_b = "\n  #{node.else_block.traverse(self, payload)}\n"
+            return pred ++ then_b ++ "else" ++ else_b ++ "end"
         end
     end
     #-------------------------------------------------------------------------#
@@ -967,6 +993,18 @@ module Ast
                 raise TypeError, "#{node.var_ident} is an uninitialized value"
             else 
                 return prim_val
+            end
+        end
+
+        def visit_conditional(node, payload)
+            pred = node.predicate.traverse(self, payload)
+            if !pred.is_a?(Boolean)
+                raise TypeError, "Predicate cannot be resolved to a boolean"
+            end
+            if pred.value
+                return node.then_block.traverse(self, payload)
+            else
+                return node.else_block.traverse(self, payload)
             end
         end
     end

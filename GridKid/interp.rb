@@ -213,7 +213,7 @@ module Interp
                 elsif has("\n")
                     capture
                     emit_token(:linebreak) # \n
-                else
+                elsif has_letter
                     while has_letter
                         capture
                     end
@@ -231,10 +231,17 @@ module Interp
                         emit_token(:mean_func)
                     elsif @token_so_far == "sum"
                         emit_token(:sum_func)
+                    elsif @token_so_far == "if"
+                        emit_token(:if_token)
+                    elsif @token_so_far == "else"
+                        emit_token(:else_token)
+                    elsif @token_so_far == "end"
+                        emit_token(:end_token)
                     else
-                        # raise TypeError, "Unknown token (#{@token_so_far}) at index: #{@start_idx}"
                         emit_token(:identifier)
                     end
+                else
+                    raise TypeError, "Unknown token (#{@token_so_far}) at index: #{@start_idx}"
                 end
             end
 
@@ -264,7 +271,9 @@ module Interp
             end
 
             def block
-                if has(:left_brace)
+                if has(:if_token)
+                    return handle_conditional(@tokens[@token_idx].start_idx)
+                elsif has(:left_brace)
                     start_i = @tokens[@token_idx].start_idx
                     advance
                     if has(:linebreak)
@@ -272,7 +281,7 @@ module Interp
                     end
                     statements = []
                     while in_bounds && !has(:right_brace)
-                        statements.append(expression)
+                        statements.append(block)
                     end
                     if !has(:right_brace)
                         raise TypeError, "Expected closing brace"
@@ -574,7 +583,7 @@ module Interp
                 if has(:comma)
                     advance
                     right = expression
-                    if not has(:right_bracket)
+                    if !has(:right_bracket)
                         raise TypeError, "Expected closing Bracket at index: #{right.indices[1]}"
                     end
                     end_i = @tokens[@token_idx].end_idx
@@ -612,7 +621,7 @@ module Interp
                 if has(:comma)
                     advance
                     right = expression
-                    if not has(:right_parenthesis)
+                    if !has(:right_parenthesis)
                         raise TypeError, "Expected closing Parenthesis for Statistical Function after index: #{right.indices[1]}"
                     end
                     end_i = @tokens[@token_idx].end_idx
@@ -644,13 +653,46 @@ module Interp
             else 
                 advance
                 expr = expression
-                if not has(:linebreak)
+                if !has(:linebreak)
                     raise TypeError, "Expected linebreak for assignment after index: #{expr.indices[1]}. Assignments cannot be the last statement in a block."
                 end
                 end_i = @tokens[@token_idx].end_idx
                 advance
                 return Assignment.new(ident.source, expr, [start_i, end_i])
             end
+        end
+
+        def handle_conditional(start_i)
+            advance
+            predicate = expression
+            if !has(:linebreak)
+                raise TypeError, "Expected linebreak for conditional before then block"
+            end
+            advance
+            then_block = block
+            if !has(:linebreak)
+                raise TypeError, "Expected linebreak for conditional after then block"
+            end
+            advance
+            if !has(:else_token)
+                raise TypeError, "Expected else statement for conditional"
+            end
+            advance
+            if !has(:linebreak)
+                raise TypeError, "Expected linebreak for conditional after else block"
+            end
+            advance
+            else_block = block
+            if !has(:linebreak)
+                raise TypeError, "Expected linebreak for conditional after else block"
+            end
+            advance
+            if !has(:end_token)
+                raise TypeError, "Expected end token for conditional"
+            end
+            advance
+            end_i = @tokens[@token_idx - 1].start_idx
+            return Conditional.new(predicate, then_block, else_block, [start_i, end_i])
         end
     end
 end

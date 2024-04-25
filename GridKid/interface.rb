@@ -12,6 +12,10 @@ module Interface
     $grid_row = 0
     $grid_col = 0
     $grid_size = 10
+    $col_step = 14 # arbitrarily chosen spacing
+    $col_first = $col_step / 2 # arbitrarily chosen spacing, half of col_step
+    $row_step = 2 # skips the separator-line row
+    $row_max = ($grid_size * 2) + 1
 
     class Program
         def initialize
@@ -21,7 +25,7 @@ module Interface
             @width = Curses.cols
             @main_window = Window.new(@height, @width, 0, 0)
             @main_window.keypad(true)
-            form_size = 8
+            form_size = 12
             display_size = 2
             @form = FormulaEditor.new(form_size, @width, 0, 0, form_size)
             @display = CellDisplay.new(display_size, @width, form_size, 0, display_size)
@@ -75,20 +79,22 @@ module Interface
         end
 
         def f_refresh
+            col_end = $col_first + ($grid_size * $col_step) - @id_w_len
             @id_w.clear
             @w.clear
             @id_w.setpos((@form_size - 1) / 2, 0)
             @id_w.addstr("Formula [#{$grid_row}, #{$grid_col}]")
-            (0..@form_size).each do |row|
-                @id_w.setpos(row, @id_w_len - 1)
-                @id_w.addstr("\u2502")
-            end
 
-            @w.setpos(0, 2)
+            vertical_line(@id_w, @id_w_len - 1, 1, @form_size)
+
+            @w.setpos(1, 0)
             @w.addstr(get_formula($grid_row, $grid_col, @width))
 
+            horizontal_line(@id_w, 0, 0, @id_w_len)
             horizontal_line(@id_w, @form_size - 1, 0, @id_w_len)
-            horizontal_line(@w, @form_size - 1, 0, @width)
+            horizontal_line(@w, 0, 0, col_end)
+            horizontal_line(@w, @form_size - 1, 0, col_end)
+            vertical_line(@w, col_end, 0, @form_size)
 
             @id_w.refresh
             @w.refresh
@@ -100,7 +106,7 @@ module Interface
             loop do
                 @w.clear
                 @w.refresh
-                @w.setpos(0, 2)
+                @w.setpos(1, 0)
                 @w.addstr(text)
                 char = @w.getch
                 if char == '`' # cancel character
@@ -125,14 +131,14 @@ module Interface
                 if text == "True" || text == "False"
                     val = text.downcase == "true"
                     run.set_cell(text, addr, BooleanP.new(val))
-                elsif text =~ /^[-+]?[0-9]*$/
+                elsif text =~ /\A\d+\Z/
                     val = text.to_i
                     run.set_cell(text, addr, IntP.new(val))
-                elsif text=~ /^[-+]?[0-9]*\.?[0-9]+$/
+                elsif text=~ /\A[+-]?\d+(\.\d+)?\z/
                     val = text.to_f
                     run.set_cell(text, addr, FloatP.new(val))
                 else
-                    val = "\"#{text}\""
+                    val = "\"#{text.gsub("\n", "\\n ")}\""
                     run.set_cell(val, addr, StringP.new(val))
                 end
             else
@@ -162,16 +168,18 @@ module Interface
         end
 
         def cd_refresh
+            col_end = $col_first + ($grid_size * $col_step) - @id_w_len
             @id_w.setpos(0, 0)
             @id_w.addstr("Value [#{$grid_row}, #{$grid_col}]")
             @id_w.setpos(0, @id_w_len - 1)
             @id_w.addstr("\u2502")
 
-            @w.setpos(0, 2)
+            @w.setpos(0, 0)
             @w.addstr(display_cell($grid_row, $grid_col, @width, true))
 
             horizontal_line(@id_w, 1, 0, @id_w_len)
-            horizontal_line(@w, 1, 0, @width)
+            horizontal_line(@w, 1, 0, col_end)
+            vertical_line(@w, col_end, 0, @display_size)
 
             @id_w.refresh
             @w.refresh
@@ -185,10 +193,10 @@ module Interface
             @width = width
             @w = Window.new(@height, @width, r_ind, c_ind)
 
-            @col_step = 14 # arbitrarily chosen spacing
-            @col_first = @col_step / 2 # arbitrarily chosen spacing, half of col_step
-            @row_step = 2 # skips the separator-line row
-            @row_max = ($grid_size * 2) + 1
+            # @col_step = 14 # arbitrarily chosen spacing
+            # @col_first = @col_step / 2 # arbitrarily chosen spacing, half of col_step
+            # @row_step = 2 # skips the separator-line row
+            # @row_max = ($grid_size * 2) + 1
         end
 
         def cg_refresh
@@ -198,12 +206,12 @@ module Interface
         end
 
         def draw_grid_template
-            col_end = @col_first + ($grid_size * @col_step)
+            col_end = $col_first + ($grid_size * $col_step)
             # populates row-indices and horizontal-separators
             idx = 0
             # Clean traversal. A range and each. You could avoid the
             # conditional with two separate ranges/eaches.
-            (1..@row_max).each do |row|
+            (1..$row_max).each do |row|
                 if row % 2 == 0
                     @w.setpos(row, 2)
                     @w.addstr("#{idx}")
@@ -214,24 +222,24 @@ module Interface
             end
             # populates column-indices and vertical-separators
             (0...$grid_size).each do |col| 
-                @w.setpos(0, @col_step + (col * @col_step))
+                @w.setpos(0, $col_step + (col * $col_step))
                 @w.addstr("#{col}")
-                vertical_line(@w, @col_first + (col * @col_step), 0, @row_max + 1)
+                vertical_line(@w, $col_first + (col * $col_step), 0, $row_max + 1)
             end
-            vertical_line(@w, col_end, 0, @row_max + 1)
+            vertical_line(@w, col_end, 0, $row_max + 1)
         end
 
         def draw_grid_values
             (0...$grid_size).each do |row|
                 (0...$grid_size).each do |col|
-                    row_idx = @row_step + (row * @row_step)
-                    col_idx = (@col_first + 1) + (col * @col_step)
+                    row_idx = $row_step + (row * $row_step)
+                    col_idx = ($col_first + 1) + (col * $col_step)
                     @w.setpos(row_idx, col_idx)
                     # Highlights currently selected row
                     if $grid_row == row && $grid_col == col
                         @w.attron(A_REVERSE)
                     end
-                    @w.addstr(display_cell(row, col, @col_step, false))
+                    @w.addstr(display_cell(row, col, $col_step, false))
                     @w.attroff(A_REVERSE)
                 end
             end
