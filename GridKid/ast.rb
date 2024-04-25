@@ -1049,7 +1049,7 @@ module Ast
         def visit_for_each(node, payload)
             addresses = validate_cell_func(node, payload)
             iterator = node.iterator
-            result = nil
+            result = StringP.new("Error")
             row_range = node.inclusive ? (addresses[0].row..addresses[1].row) : (addresses[0].row...addresses[1].row)
             col_range = node.inclusive ? (addresses[0].column..addresses[1].column) : (addresses[0].column...addresses[1].column)
 

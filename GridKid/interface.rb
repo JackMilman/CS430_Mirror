@@ -251,8 +251,8 @@ module Interface
         s = ""
         addr = CellAddressP.new(row, col)
         run = Runtime.new($grid)
-        val = run.get_cell(addr).code
-        s = val == nil ? "   " : val
+        source = run.get_cell(addr).code
+        s = source == nil ? "   " : lex_and_parse(source).traverse(Serializer.new, Runtime.new($grid))
         return truncate_s(s, max - 1).ljust((max - 1), ' ')
     end
 
