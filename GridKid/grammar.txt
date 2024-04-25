@@ -2,7 +2,9 @@
 # descend on the right. Right-associative operators flip. There are cleanly
 # divided precedence levels.
 
-block = expression* EOF
+block = if expression LINEBREAK block LINEBREAK else LINEBREAK block LINEBREAK end 
+    | { block* EOF }
+    | expression
 
 expression = logic
 
