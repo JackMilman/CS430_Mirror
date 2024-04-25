@@ -65,7 +65,7 @@ ser = Serializer.new
 eva = Evaluator.new
 # puts "#{block1.traverse(ser, run)}"
 # puts "#{block1.traverse(eva, run).inspect}" # expect 18
-# grid.dump_state
+grid.dump_state
 # puts "#{example.traverse(ser, run)}"
 # puts "#{example.traverse(eva, run).inspect}" # expect 42
 
@@ -91,40 +91,111 @@ eva = Evaluator.new
 # puts "#{block_test.traverse(eva, Runtime.new(grid)).inspect}"
 
 
-if_test = Conditional.new(
-    Equals.new(
-        IntP.new(5),
-        IntP.new(5)
-    ),
-    IntP.new(1),
-    IntP.new(2)
-)
-puts "SERIALIZED:"
-puts "#{if_test.traverse(ser, Runtime.new(grid))}"
-puts "EVALUATED:"
-puts "#{if_test.traverse(eva, Runtime.new(grid)).inspect}"
+# if_test = Conditional.new(
+#     Equals.new(
+#         IntP.new(5),
+#         IntP.new(5)
+#     ),
+#     IntP.new(1),
+#     IntP.new(2)
+# )
+# puts "SERIALIZED:"
+# puts "#{if_test.traverse(ser, Runtime.new(grid))}"
+# puts "EVALUATED:"
+# puts "#{if_test.traverse(eva, Runtime.new(grid)).inspect}"
 
-source = "if #[2, 1] < #[2,0]\n1\nelse\n2\nend"
-tester = Lexer.new(source)
+# source = "if #[2, 1] < #[2,0]\n1\nelse\n2\nend"
+# tester = Lexer.new(source)
+# toks = tester.lex
+# puts
+# puts "SOURCE:"
+# toks.each{|tok| print tok.source}
+# parser = Parser.new(toks)
+# if_test = parser.parse
+
+# puts
+# grid = Grid.new(3)
+# run = Runtime.new(grid)
+# run.set_cell("2", CellAddressP.new(2,1), IntP.new(2))
+# run.set_cell("3", CellAddressP.new(2,0), IntP.new(3))
+# run.set_cell(source, CellAddressP.new(0, 0), if_test)
+# cell = Runtime.new(grid).get_cell(CellAddressP.new(0,0))
+# puts
+# puts "GRID SOURCE:"
+# puts cell.code
+# puts
+# puts "SERIALIZED:"
+# puts "#{if_test.traverse(ser, Runtime.new(grid))}"
+# puts "EVALUATED:"
+# puts "#{if_test.traverse(eva, Runtime.new(grid)).inspect}"
+
+# for_test = ForEach.new(
+#     VariableRef.new("var"),
+#     CellAddressP.new(0, 0),
+#     CellAddressP.new(0, 1),
+#     true,
+#     Conditional.new(
+#         Equals.new(
+#             IntP.new(5),
+#             IntP.new(5)
+#         ),
+#         IntP.new(1),
+#         IntP.new(2)
+#     )
+# )
+# puts "#{for_test.traverse(ser, Runtime.new(grid))}"
+
+super_compound = Block.new([
+    Assignment.new(
+        "val",
+        IntP.new(12)
+    ),
+    ForEach.new(
+        VariableRef.new("abcd"),
+        CellAddressP.new(0, 0),
+        CellAddressP.new(0, 2),
+        true,
+        Conditional.new(
+            Equals.new(
+                VariableRef.new("abcd"),
+                IntP.new(5)
+            ),
+            Assignment.new(
+                "val",
+                Add.new(
+                    VariableRef.new("val"),
+                    IntP.new(2)
+                )
+            ),
+            Assignment.new(
+                "val",
+                Subtract.new(
+                    VariableRef.new("val"),
+                    IntP.new(1)
+                )
+            )
+        )
+    ),
+    VariableRef.new("val")
+])
+# Runtime.new(grid).set_cell("False", CellAddressP.new(0, 1), BooleanP.new(false))
+Runtime.new(grid).set_cell("5", CellAddressP.new(0, 2), IntP.new(5))
+puts
+puts "#{super_compound.traverse(ser, Runtime.new(grid))}"
+puts "#{super_compound.traverse(eva, Runtime.new(grid)).inspect}"
+
+
+
+
+
+source = "for abcd in [0,0]..[0,1]\n{if abcd > 2\n3\nelse\n2\nend}\nend"
+tester = Lexer.new(source) # Expect 3
 toks = tester.lex
 puts
 puts "SOURCE:"
-toks.each{|tok| print tok.source}
+toks.each{|tok| print tok.source + " "}
 parser = Parser.new(toks)
-if_test = parser.parse
-
+for_test = parser.parse
 puts
-grid = Grid.new(3)
-run = Runtime.new(grid)
-run.set_cell("2", CellAddressP.new(2,1), IntP.new(2))
-run.set_cell("3", CellAddressP.new(2,0), IntP.new(3))
-run.set_cell(source, CellAddressP.new(0, 0), if_test)
-cell = Runtime.new(grid).get_cell(CellAddressP.new(0,0))
 puts
-puts "GRID SOURCE:"
-puts cell.code
-puts
-puts "SERIALIZED:"
-puts "#{if_test.traverse(ser, Runtime.new(grid))}"
-puts "EVALUATED:"
-puts "#{if_test.traverse(eva, Runtime.new(grid)).inspect}"
+puts "#{for_test.traverse(ser, Runtime.new(grid))}"

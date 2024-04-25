@@ -252,11 +252,7 @@ module Interface
         addr = CellAddressP.new(row, col)
         run = Runtime.new($grid)
         val = run.get_cell(addr).code
-        if val == nil
-            s = "   "
-        else
-            s = val
-        end
+        s = val == nil ? "   " : val
         return truncate_s(s, max - 1).ljust((max - 1), ' ')
     end
 

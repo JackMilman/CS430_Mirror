@@ -388,6 +388,28 @@ module Ast
         end
     end
 
+    class ForEach
+        attr_reader :iterator
+        attr_reader :first
+        attr_reader :last
+        attr_reader :inclusive
+        attr_reader :block
+        attr_reader :indices
+
+        def initialize(iterator, first, last, inclusive, block, indices=nil)
+            @iterator = iterator
+            @first = first
+            @last = last
+            @inclusive = inclusive
+            @block = block
+            @indices = indices
+        end
+
+        def traverse(visitor, payload)
+            visitor.visit_for_each(self, payload)
+        end
+    end
+
     #-------------------------------------------------------------------------#
     #--------------------------------Serializer-------------------------------#
     #-------------------------------------------------------------------------#
@@ -574,9 +596,8 @@ module Ast
         #     !!! VARIABLE VISITORS !!!    #
         #----------------------------------#
         def visit_block(node, payload)
-            block = node.statements.collect { |statement| statement.traverse(self, payload) }
-            block.map!{|statement| "  " ++ statement}
-            return "{\n#{block.join("\n")}\n}"
+            block = node.statements.collect{|statement| statement.traverse(self, payload)}.join("\n")
+            return "{\n#{block.split("\n").map{|line| "  " ++ line}.join("\n")}\n}"
         end
 
         def visit_assignment(node, payload)
@@ -588,10 +609,21 @@ module Ast
         end
 
         def visit_conditional(node, payload)
-            pred = "if #{node.predicate.traverse(self, payload)}"
-            then_b = "\n  #{node.then_block.traverse(self, payload)}\n"
-            else_b = "\n  #{node.else_block.traverse(self, payload)}\n"
-            return pred ++ then_b ++ "else" ++ else_b ++ "end"
+            pred = "if #{node.predicate.traverse(self, payload)}\n"
+            then_b = "#{node.then_block.traverse(self, payload).split("\n").map{|line| "  " ++ line }.join("\n")}\n"
+            else_b = "#{node.else_block.traverse(self, payload).split("\n").map{|line| "  " ++ line }.join("\n")}\n"
+            return pred ++ then_b ++ "else\n" ++ else_b ++ "end"
+        end
+
+        def visit_for_each(node, payload)
+            iteration = "for #{node.iterator.traverse(self, payload)} in "
+            lower = "#{node.first.traverse(self, payload)}"
+            upper = "#{node.last.traverse(self, payload)}"
+            inc = node.inclusive ? ".." : "..."
+            range = lower ++ inc ++ upper ++ "\n"
+            first_line = iteration ++ range
+            block = "#{node.block.traverse(self, payload).split("\n").map{|line| "  " ++ line }.join("\n")}\n"
+            return first_line ++ block ++ "end"
         end
     end
     #-------------------------------------------------------------------------#
@@ -972,8 +1004,14 @@ module Ast
         #    !!! VARIABLE VISITORS !!!     #
         #----------------------------------#
         def visit_block(node, payload)
-            node.statements.each { |statement| statement.traverse(self, payload)}
-            return node.statements.last.traverse(self, payload)
+            result = nil
+            if node.statements.length < 1
+                raise TypeError, "Block cannot be resolved to a value because there are no statements inside."
+            end
+            node.statements.each do |statement|
+              result = statement.traverse(self, payload)
+            end
+            return result
         end
 
         def visit_assignment(node, payload)
@@ -983,8 +1021,8 @@ module Ast
                 raise TypeError, "Unable to evaluate expression"
             else
                 payload.assign_var(node.var_ident, prim_val)
+                payload.get_var(node.var_ident)
             end
-            return nil
         end
 
         def visit_variable_ref(node, payload)
@@ -1006,6 +1044,27 @@ module Ast
             else
                 return node.else_block.traverse(self, payload)
             end
+        end
+
+        def visit_for_each(node, payload)
+            addresses = validate_cell_func(node, payload)
+            iterator = node.iterator
+            result = nil
+            row_range = node.inclusive ? (addresses[0].row..addresses[1].row) : (addresses[0].row...addresses[1].row)
+            col_range = node.inclusive ? (addresses[0].column..addresses[1].column) : (addresses[0].column...addresses[1].column)
+
+            (row_range).each do |row|
+              (col_range).each do |col|
+                addr = CellAddressP.new(row, col)
+                ast = payload.get_cell(addr).a_s_t
+                if ast != nil
+                    cell_result = payload.get_cell(addr).a_s_t.traverse(self, Runtime.new(payload.grid))
+                    payload.assign_var(iterator.var_ident, cell_result)
+                    result = node.block.traverse(self, payload)
+                end
+              end
+            end
+            return result
         end
     end
 

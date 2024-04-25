@@ -213,6 +213,19 @@ module Interp
                 elsif has("\n")
                     capture
                     emit_token(:linebreak) # \n
+                elsif has('.')
+                    capture
+                    if has('.')
+                        capture
+                        if has('.')
+                            capture
+                            emit_token(:exclusive_range)
+                        else
+                            emit_token(:inclusive_range)
+                        end
+                    else
+                        raise TypeError, "Invalid token (#{@token_so_far}) at index: #{@start_idx}"
+                    end
                 elsif has_letter
                     while has_letter
                         capture
@@ -237,10 +250,15 @@ module Interp
                         emit_token(:else_token)
                     elsif @token_so_far == "end"
                         emit_token(:end_token)
+                    elsif @token_so_far == "for"
+                        emit_token(:for_token)
+                    elsif @token_so_far == "in"
+                        emit_token(:in_token)
                     else
                         emit_token(:identifier)
                     end
                 else
+                    capture
                     raise TypeError, "Unknown token (#{@token_so_far}) at index: #{@start_idx}"
                 end
             end
@@ -273,6 +291,8 @@ module Interp
             def block
                 if has(:if_token)
                     return handle_conditional(@tokens[@token_idx].start_idx)
+                elsif has(:for_token)
+                    return handle_for_each(@tokens[@token_idx].start_idx)
                 elsif has(:left_brace)
                     start_i = @tokens[@token_idx].start_idx
                     advance
@@ -653,11 +673,12 @@ module Interp
             else 
                 advance
                 expr = expression
-                if !has(:linebreak)
-                    raise TypeError, "Expected linebreak for assignment after index: #{expr.indices[1]}. Assignments cannot be the last statement in a block."
+                if has(:linebreak)
+                    # raise TypeError, "Expected linebreak for assignment after index: #{expr.indices[1]}. Assignments cannot be the last statement in a block."
+                    advance
                 end
                 end_i = @tokens[@token_idx].end_idx
-                advance
+                # advance
                 return Assignment.new(ident.source, expr, [start_i, end_i])
             end
         end
@@ -693,6 +714,40 @@ module Interp
             advance
             end_i = @tokens[@token_idx - 1].start_idx
             return Conditional.new(predicate, then_block, else_block, [start_i, end_i])
+        end
+
+        def handle_for_each(start_i)
+            advance
+            if !has(:identifier)
+                raise TypeError, "Expected identifier variable for for-each loop"
+            end
+            iterator = expression
+            if !has(:in_token)
+                raise TypeError, "Expected in keyword for for-each loop"
+            end
+            advance
+            first = expression
+            if !(has(:inclusive_range) || has(:exclusive_range))
+                raise TypeError, "Expected an inclusive or inclusive range for for-each loop"
+            end
+            inclusive = has(:inclusive_range)
+            advance
+            last = expression
+            if !has(:linebreak)
+                raise TypeError, "Expected linebreak after first line of for-each loop"
+            end
+            advance
+            loop_block = block
+            if !has(:linebreak)
+                raise TypeError, "Expected linebreak after block of for-each loop"
+            end
+            advance
+            if !has(:end_token)
+                raise TypeError, "Expected end token for for-each loop"
+            end
+            advance
+            end_i = @tokens[@token_idx - 1].start_idx
+            return ForEach.new(iterator, first, last, inclusive, loop_block, [start_i, end_i])
         end
     end
 end
