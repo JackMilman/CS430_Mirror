@@ -90,11 +90,11 @@ module Interface
             @w.setpos(1, 0)
             @w.addstr(get_formula($grid_row, $grid_col, @width))
 
-            horizontal_line(@id_w, 0, 0, @id_w_len)
-            horizontal_line(@id_w, @form_size - 1, 0, @id_w_len)
+            horizontal_line(@id_w, 0, 0, @id_w_len) # top lines
             horizontal_line(@w, 0, 0, col_end)
+            horizontal_line(@id_w, @form_size - 1, 0, @id_w_len) # bottom lines
             horizontal_line(@w, @form_size - 1, 0, col_end)
-            vertical_line(@w, col_end, 0, @form_size)
+            vertical_line(@w, col_end, 0, @form_size) # vertical separator
 
             @id_w.refresh
             @w.refresh
