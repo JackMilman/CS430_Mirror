@@ -145,71 +145,91 @@ grid.dump_state
 # )
 # puts "#{for_test.traverse(ser, Runtime.new(grid))}"
 
-super_compound = Block.new([
-    Assignment.new(
-        "val",
-        IntP.new(12)
-    ),
-    ForEach.new(
-        VariableRef.new("abcd"),
-        CellAddressP.new(0, 0),
-        CellAddressP.new(0, 2),
-        true,
-        Conditional.new(
-            Equals.new(
-                VariableRef.new("abcd"),
-                IntP.new(5)
-            ),
-            Assignment.new(
-                "val",
-                Add.new(
-                    VariableRef.new("val"),
-                    IntP.new(2)
-                )
-            ),
-            Assignment.new(
-                "val",
-                Subtract.new(
-                    VariableRef.new("val"),
-                    IntP.new(1)
-                )
-            )
-        )
-    ),
-    VariableRef.new("val")
-])
-# Runtime.new(grid).set_cell("False", CellAddressP.new(0, 1), BooleanP.new(false))
-Runtime.new(grid).set_cell("5", CellAddressP.new(0, 2), IntP.new(5))
-puts
-puts "#{super_compound.traverse(ser, Runtime.new(grid))}"
-puts "#{super_compound.traverse(eva, Runtime.new(grid)).inspect}"
+# super_compound = Block.new([
+#     Assignment.new(
+#         "val",
+#         IntP.new(12)
+#     ),
+#     ForEach.new(
+#         VariableRef.new("abcd"),
+#         CellAddressP.new(0, 0),
+#         CellAddressP.new(0, 2),
+#         true,
+#         Conditional.new(
+#             Equals.new(
+#                 VariableRef.new("abcd"),
+#                 IntP.new(5)
+#             ),
+#             Assignment.new(
+#                 "val",
+#                 Add.new(
+#                     VariableRef.new("val"),
+#                     IntP.new(2)
+#                 )
+#             ),
+#             Assignment.new(
+#                 "val",
+#                 Subtract.new(
+#                     VariableRef.new("val"),
+#                     IntP.new(1)
+#                 )
+#             )
+#         )
+#     ),
+#     VariableRef.new("val")
+# ])
+# # Runtime.new(grid).set_cell("False", CellAddressP.new(0, 1), BooleanP.new(false))
+# Runtime.new(grid).set_cell("5", CellAddressP.new(0, 2), IntP.new(5))
+# puts
+# puts "#{super_compound.traverse(ser, Runtime.new(grid))}"
+# puts "#{super_compound.traverse(eva, Runtime.new(grid)).inspect}"
 
 
 
 
 
-source = "for abcd in [0,0]..[0,1]\n{\nif abcd > 2\n3\nelse\n2\nend\n}\nend"
-tester = Lexer.new(source) # Expect 3
-toks = tester.lex
-puts
-# puts "TOKS:"
-# toks.each{|tok| puts tok.inspect}
-puts
-puts "SOURCE:"
-toks.each{|tok| print tok.source + " "}
-puts
-parser = Parser.new(toks)
-for_test = parser.parse
-puts
-puts "SERIALIZED:"
-# puts "#{for_test.inspect}"
-puts "#{for_test.traverse(ser, Runtime.new(grid))}"
+# source = "for abcd in [0,0]..[0,1]\n{\nif abcd > 2\n3\nelse\n2\nend\n}\nend"
+# tester = Lexer.new(source) # Expect 3
+# toks = tester.lex
+# puts
+# # puts "TOKS:"
+# # toks.each{|tok| puts tok.inspect}
+# puts
+# puts "SOURCE:"
+# toks.each{|tok| print tok.source + " "}
+# puts
+# parser = Parser.new(toks)
+# for_test = parser.parse
+# puts
+# puts "SERIALIZED:"
+# # puts "#{for_test.inspect}"
+# puts "#{for_test.traverse(ser, Runtime.new(grid))}"
 
 
 
 
 
-source = "{\nval = 12\nfor abcd in [0,0]..[0,1]\n{\nif abcd > 2\nval = val + 10\nelse\nval = val - 1\nend\n}\nend\n val\n}"
+# source = "{\nval = 12\nfor abcd in [0,0]..[0,1]\n{\nif abcd > 2\nval = val + 10\nelse\nval = val - 1\nend\n}\nend\n val\n}"
+# tester = Lexer.new(source) # Expect 3
+# toks = tester.lex
+# puts
+# # puts "TOKS:"
+# # toks.each{|tok| puts tok.inspect}
+# puts
+# puts "SOURCE:"
+# toks.each{|tok| print tok.source + " "}
+# puts
+# parser = Parser.new(toks)
+# for_test = parser.parse
+# puts
+# puts "SERIALIZED:"
+# # puts "#{for_test.inspect}"
+# puts "#{for_test.traverse(ser, Runtime.new(grid))}"
+
+
+
+
+source = "{\nvalue = 10\nvalue = 12\nvalue + value\n}"
 tester = Lexer.new(source) # Expect 3
 toks = tester.lex
 puts

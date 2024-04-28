@@ -284,7 +284,10 @@ module Interface
                 begin
                     ast = lex_and_parse(cell.code)
                     prim = evaluate(ast)
+                    run.set_cell(cell.code, addr, ast)
                     s = "#{prim.value}"
+                rescue NoMethodError
+                    s = "Cannot be resolved to a primitive value"
                 rescue TypeError => error
                     s = verbose ? error.to_s : "ERROR"
                 end
@@ -293,6 +296,7 @@ module Interface
             begin
                 ast = lex_and_parse(cell.code)
                 prim = evaluate(ast)
+                run.set_cell(cell.code, addr, ast)
                 s = "#{prim.value}"
             rescue NoMethodError
                 s = "Cannot be resolved to a primitive value"

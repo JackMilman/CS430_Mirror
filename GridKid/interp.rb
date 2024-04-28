@@ -564,7 +564,7 @@ module Interp
 
             root = block
             if in_bounds
-                raise TypeError, "Invalid expression. Tokens remain to be parsed."
+                raise TypeError, "Invalid expression. Tokens remain to be parsed: #{@tokens[@token_idx..]}"
             end
             return root
         end
