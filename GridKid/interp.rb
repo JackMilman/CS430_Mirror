@@ -668,7 +668,6 @@ module Interp
         end
 
         def handle_identifier(start_i, ident)
-            result = nil
             advance
             if !has(:assignment)
                 end_i = ident.end_idx
