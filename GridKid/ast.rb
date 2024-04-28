@@ -1106,7 +1106,7 @@ module Ast
 
         def set_cell(source, address, a_s_t, payload)
             validate_range(address)
-            prim = a_s_t != nil ? a_s_t.traverse(Evaluator.new, payload) : nil
+            prim = a_s_t == nil ? nil : a_s_t.traverse(Evaluator.new, payload)
             @cell_grid[address.row][address.column] = Cell.new(source, a_s_t, prim)
         end
 

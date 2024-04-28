@@ -50,6 +50,8 @@ module Interface
                     $grid_row = $grid_row < $grid_size - 1 ? $grid_row + 1 : $grid_row
                 elsif char == 'E'
                     @form.form_loop
+                elsif char == 'R' # resets the current grid cell
+                    Runtime.new($grid).set_cell(nil, CellAddressP.new($grid_row, $grid_col), nil)
                 end
                 
                 # draw and refresh affected windows
