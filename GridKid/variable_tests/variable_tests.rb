@@ -188,14 +188,40 @@ puts "#{super_compound.traverse(eva, Runtime.new(grid)).inspect}"
 
 
 
-source = "for abcd in [0,0]..[0,1]\n{if abcd > 2\n3\nelse\n2\nend}\nend"
+source = "for abcd in [0,0]..[0,1]\n{\nif abcd > 2\n3\nelse\n2\nend\n}\nend"
 tester = Lexer.new(source) # Expect 3
 toks = tester.lex
 puts
+# puts "TOKS:"
+# toks.each{|tok| puts tok.inspect}
+puts
 puts "SOURCE:"
 toks.each{|tok| print tok.source + " "}
+puts
 parser = Parser.new(toks)
 for_test = parser.parse
 puts
+puts "SERIALIZED:"
+# puts "#{for_test.inspect}"
+puts "#{for_test.traverse(ser, Runtime.new(grid))}"
+
+
+
+
+
+source = "{\nval = 12\nfor abcd in [0,0]..[0,1]\n{\nif abcd > 2\nval = val + 10\nelse\nval = val - 1\nend\n}\nend\n val\n}"
+tester = Lexer.new(source) # Expect 3
+toks = tester.lex
 puts
+# puts "TOKS:"
+# toks.each{|tok| puts tok.inspect}
+puts
+puts "SOURCE:"
+toks.each{|tok| print tok.source + " "}
+puts
+parser = Parser.new(toks)
+for_test = parser.parse
+puts
+puts "SERIALIZED:"
+# puts "#{for_test.inspect}"
 puts "#{for_test.traverse(ser, Runtime.new(grid))}"

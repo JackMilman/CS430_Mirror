@@ -25,7 +25,7 @@ module Interface
             @width = Curses.cols
             @main_window = Window.new(@height, @width, 0, 0)
             @main_window.keypad(true)
-            form_size = 12
+            form_size = 14
             display_size = 2
             @form = FormulaEditor.new(form_size, @width, 0, 0, form_size)
             @display = CellDisplay.new(display_size, @width, form_size, 0, display_size)
@@ -49,8 +49,6 @@ module Interface
                 elsif char == Key::DOWN
                     $grid_row = $grid_row < $grid_size - 1 ? $grid_row + 1 : $grid_row
                 elsif char == 'E'
-                    # @main_window.clear
-                    # @main_window.refresh
                     @form.form_loop
                 end
                 
@@ -192,11 +190,6 @@ module Interface
             @height = height
             @width = width
             @w = Window.new(@height, @width, r_ind, c_ind)
-
-            # @col_step = 14 # arbitrarily chosen spacing
-            # @col_first = @col_step / 2 # arbitrarily chosen spacing, half of col_step
-            # @row_step = 2 # skips the separator-line row
-            # @row_max = ($grid_size * 2) + 1
         end
 
         def cg_refresh
@@ -252,7 +245,11 @@ module Interface
         addr = CellAddressP.new(row, col)
         run = Runtime.new($grid)
         source = run.get_cell(addr).code
-        s = source == nil ? "   " : lex_and_parse(source).traverse(Serializer.new, Runtime.new($grid))
+        begin
+            s = source == nil ? "   " : lex_and_parse(source).traverse(Serializer.new, Runtime.new($grid))
+        rescue TypeError => error
+            s = "ERROR: \n" ++ source
+        end
         return truncate_s(s, max - 1).ljust((max - 1), ' ')
     end
 

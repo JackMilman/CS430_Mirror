@@ -302,6 +302,9 @@ module Interp
                     statements = []
                     while in_bounds && !has(:right_brace)
                         statements.append(block)
+                        if has(:linebreak)
+                            advance
+                        end
                     end
                     if !has(:right_brace)
                         raise TypeError, "Expected closing brace"
@@ -561,7 +564,7 @@ module Interp
 
             root = block
             if in_bounds
-                raise TypeError, "Invalid expression"
+                raise TypeError, "Invalid expression. Tokens remain to be parsed."
             end
             return root
         end
@@ -673,12 +676,7 @@ module Interp
             else 
                 advance
                 expr = expression
-                if has(:linebreak)
-                    # raise TypeError, "Expected linebreak for assignment after index: #{expr.indices[1]}. Assignments cannot be the last statement in a block."
-                    advance
-                end
                 end_i = @tokens[@token_idx].end_idx
-                # advance
                 return Assignment.new(ident.source, expr, [start_i, end_i])
             end
         end
@@ -700,7 +698,7 @@ module Interp
             end
             advance
             if !has(:linebreak)
-                raise TypeError, "Expected linebreak for conditional after else block"
+                raise TypeError, "Expected linebreak for conditional after else clause"
             end
             advance
             else_block = block
