@@ -1,0 +1,88 @@
+*1:*
+equa = comb → EMOJI
+comb = oper ↑ EMOJI
+     | oper ↓ EMOJI
+oper = comb
+     | EMOJI
+
+*2:*
+------------------------------------------------------------------------------------------------ |
+              equa            |                equa            |                    equa         |
+            /   |   \         |         /       |       \      |              /       |      \   |
+          comb  →   🏚️        |       comb      →       🧛‍♀️    |           comb       →      🚓  |
+        /   |   \             |     /   |   \                  |        /   |   \                |
+      oper  ↓   💰            |   oper  ↓   🩸                 |      oper  ↑   📫               |
+       |                      |    |                           |       |                         |
+       🏠                     |   comb                         |      comb                       |
+                              |  /    |   \                    |    /   |   \                    |
+                              | oper  ↑   🙋‍♀️                   |  oper  ↑   📦                  | 
+                              |   |                            |   |                             |
+                              |   🧛‍♂️                           |  🦨                            |
+-------------------------------------------------------------------------------------------------|
+
+*3:*
+My equation: 😐 ↑ 📖 ↑ ⏰ ↓ 🤝→ 🤓
+
+*4:*
+                        equa
+                    /    |    \
+                  comb   →    🤓
+                /  |  \
+              oper ↓  🤝
+                |
+              comb
+            /   |   \
+          oper  ↑   ⏰
+           |
+          comb
+        /   |   \
+      oper  ↑   📖
+       |
+       😐
+
+*5:*
+      +
+    /   \
+   +     c
+ /   \
+a     b
+
+The sum of (the sum of a and b) and c
+
+*6:*
+    ^
+  /   \
+ 2     ^
+     /   \
+    3     2
+
+2, raised to the result of (3 raised to the power of 2)
+
+*10:*
+if has("—")
+  capture
+end
+if has_digit
+  while has_digit
+	  capture
+  end
+  if has(".")
+    capture
+    if has_digit
+      while has_digit
+        capture
+      end
+      emit_token(:float)
+      return
+  else
+    emit_token(:integer)
+  end
+else if has(".")
+    capture
+    if has(".")
+      capture
+      emit_token(:range)
+      return
+    end
+end
+error
