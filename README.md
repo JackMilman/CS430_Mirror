@@ -1,4 +1,4 @@
-GridKid: The CS430 Semester-long project.
+# GridKid: The CS430 Semester-long project.
   - Finished creating the classes for Serialization, Evaluation, and Runtime.
   - Submitted Milestone 1 on Feb 18.
   - Finished with Parser and Lexer's structure.
@@ -10,6 +10,8 @@ GridKid: The CS430 Semester-long project.
   - Finished with final testing of block and flow-control functionality
   - Submitted Milestone 4 on April 28.
   - Project Complete!
+
+# Labs
 
 lab1_alchemy: A lab exploring the grammar of a language.
 
@@ -29,4 +31,4 @@ lab8_frankenshape: A lab exploring Object-oriented programming within Haskell.
 
 lab9_rust_mains: A lab exploring Rust in basic I/O and programming.
 
-lab10_data_jam: A lab exploring data parsing and "borrowing" within Rust.
+lab10_data_jam: A lab exploring data parsing and "borrowing" within 
