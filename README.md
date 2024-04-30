@@ -29,4 +29,4 @@ lab8_frankenshape: A lab exploring Object-oriented programming within Haskell.
 
 lab9_rust_mains: A lab exploring Rust in basic I/O and programming.
 
-lab10_data_jam: A lab exploring data parsing and "borrowing" within Rust.
+lab10_data_jam: A lab exploring data parsing and "borrowing" in Rust's understanding.
